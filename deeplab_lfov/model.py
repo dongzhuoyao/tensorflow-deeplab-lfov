@@ -110,12 +110,18 @@ class DeepLabLFOVModel(object):
         current = tf.concat([input_batch,attention_map],1)
         
         v_idx = 0 # Index variable.
+        is_deal_first_layer = 0
         
         # Last block is the classification layer.
         for b_idx in xrange(len(dilations) - 1):
             for l_idx, dilation in enumerate(dilations[b_idx]):
                 w = self.variables[v_idx * 2]
                 b = self.variables[v_idx * 2 + 1]
+                if not is_deal_first_layer:
+                    w_append = create_variable("filter_of_attention_map",[3,3,1,64])
+                    w = tf.concat([w,w_append],2)
+                    is_deal_first_layer = 1
+                    
                 if dilation == 1:
                     conv = tf.nn.conv2d(current, w, strides=[1, 1, 1, 1], padding='SAME')
                 else:
