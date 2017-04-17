@@ -203,7 +203,7 @@ class DeepLabLFOVModel(object):
         gt = tf.reshape(label_batch, [-1, n_classes])
         
         # Pixel-wise softmax loss.
-        loss = tf.nn.softmax_cross_entropy_with_logits(prediction, gt)
+        loss = tf.nn.softmax_cross_entropy_with_logits(logits=prediction, labels=gt)
         reduced_loss = tf.reduce_mean(loss)
         
         return reduced_loss
