@@ -279,7 +279,7 @@ class DeepLabLFOVModel(object):
         ##deal with attention
         attention_output = self._create_attention_network(tf.cast(img_batch, tf.float32), keep_prob=tf.constant(0.5))
         attention_output = tf.reshape(attention_output,[-1,n_classes])
-        
+
         attention_target = tf.cast(tf.not_equal(gt,prediction),tf.float32)
         attention_loss = tf.nn.l2_loss(attention_output-attention_target,name="attention_loss")
 

@@ -127,7 +127,7 @@ def main():
     trainable = tf.trainable_variables()
     optim = optimiser.minimize(loss, var_list=trainable)
     
-    pred = net.preds(image_batch_placeholder)
+    #pred = net.preds(image_batch_placeholder)
     
     # Set up tf session and initialize variables. 
     config = tf.ConfigProto()
