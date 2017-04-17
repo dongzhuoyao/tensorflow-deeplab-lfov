@@ -134,7 +134,12 @@ def main():
     config.gpu_options.allow_growth = True
     sess = tf.Session(config=config)
     init = tf.global_variables_initializer()
-    
+
+    #check the shape
+    print("begin shape check....")
+    for v in tf.all_variables():
+        print("{}:  {}".format(v.name,v.get_shape()))
+
     sess.run(init)
     
     # Saver for storing checkpoints of the model.
