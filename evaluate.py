@@ -94,7 +94,7 @@ def main():
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
     sess = tf.Session(config=config)
-    init = tf.initialize_all_variables()
+    init = tf.global_variables_initializer()
     
     sess.run(init)
     sess.run(tf.initialize_local_variables())
