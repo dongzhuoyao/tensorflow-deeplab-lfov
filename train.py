@@ -117,9 +117,9 @@ def main():
     # Create network.
     net = DeepLabLFOVModel(args.weights_path)
 
-    image_batch_placeholder = tf.placeholder(tf.float32)
-    label_batch_placeholder = tf.placeholder(tf.float32)
-    attention_map_placeholder = tf.placeholder(tf.float32)
+    image_batch_placeholder = tf.placeholder(tf.float32,shape=[args.batch_size,3,h,w])
+    label_batch_placeholder = tf.placeholder(tf.float32,shape=[args.batch_size,3,h,w])
+    attention_map_placeholder = tf.placeholder(tf.float32,shape=[args.batch_size,1,h,w])
 
     # Define the loss and optimisation parameters.
     loss,attention_loss,attention_map = net.loss(image_batch_placeholder, label_batch_placeholder,attention_map_placeholder)
