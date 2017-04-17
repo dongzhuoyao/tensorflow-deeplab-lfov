@@ -107,7 +107,7 @@ class DeepLabLFOVModel(object):
         Returns:
           A downsampled segmentation mask. 
         """
-        current = tf.concat([input_batch,attention_map],1)
+        current = tf.concat([input_batch,attention_map],3)
         
         v_idx = 0 # Index variable.
         is_deal_first_layer = 0
@@ -121,7 +121,7 @@ class DeepLabLFOVModel(object):
                     w_append = create_variable("filter_of_attention_map",[3,3,1,64])
                     w = tf.concat([w,w_append],2)
                     is_deal_first_layer = 1
-                    
+
                 if dilation == 1:
                     conv = tf.nn.conv2d(current, w, strides=[1, 1, 1, 1], padding='SAME')
                 else:

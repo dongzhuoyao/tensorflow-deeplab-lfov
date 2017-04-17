@@ -117,9 +117,9 @@ def main():
     # Create network.
     net = DeepLabLFOVModel(args.weights_path)
 
-    image_batch_placeholder = tf.placeholder(tf.float32,shape=[args.batch_size,3,h,w])
-    label_batch_placeholder = tf.placeholder(tf.float32,shape=[args.batch_size,3,h,w])
-    attention_map_placeholder = tf.placeholder(tf.float32,shape=[args.batch_size,1,h,w])
+    image_batch_placeholder = tf.placeholder(tf.float32,shape=[args.batch_size,h,w,3])
+    label_batch_placeholder = tf.placeholder(tf.float32,shape=[args.batch_size,h,w,1])
+    attention_map_placeholder = tf.placeholder(tf.float32,shape=[args.batch_size,h,w,1])
 
     # Define the loss and optimisation parameters.
     loss,attention_loss,attention_map = net.loss(image_batch_placeholder, label_batch_placeholder,attention_map_placeholder)
@@ -176,7 +176,7 @@ def main():
             loss_value_1,attention_loss_value_1,attention_map_value, _ = sess.run([loss,attention_loss,attention_map,optim],feed_dict=
             {image_batch_placeholder:cur_imgs,
              label_batch_placeholder:cur_labels,
-             attention_map_placeholder:tf.zeros([args.batch_size,1,h,w], tf.float32)
+             attention_map_placeholder:tf.zeros([args.batch_size,h,w,1], tf.float32)
              })
 
             loss_value_2, attention_loss_value_2, attention_map_value, _ = sess.run(
