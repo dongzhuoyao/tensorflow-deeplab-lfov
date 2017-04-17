@@ -97,7 +97,7 @@ class DeepLabLFOVModel(object):
         return var
     
     
-    def _create_network(self, input_batch, keep_prob):
+    def _create_network(self, input_batch, attention_map,keep_prob):
         """Construct DeepLab-LargeFOV network.
         
         Args:
@@ -107,7 +107,7 @@ class DeepLabLFOVModel(object):
         Returns:
           A downsampled segmentation mask. 
         """
-        current = input_batch
+        current = tf.stack([input_batch,attention_map],1)
         
         v_idx = 0 # Index variable.
         
@@ -152,6 +152,66 @@ class DeepLabLFOVModel(object):
         current = tf.nn.bias_add(conv, b)
 
         return current
+
+
+    def _create_attention_network(self, input_batch, keep_prob):
+
+        """Construct DeepLab-LargeFOV network.
+
+                Args:
+                  input_batch: batch of pre-processed images.
+                  keep_prob: probability of keeping neurons intact.
+
+                Returns:
+                  A downsampled segmentation mask.
+                """
+        current = input_batch
+
+        v_idx = 0  # Index variable.
+
+        # Last block is the classification layer.
+        for b_idx in xrange(len(dilations) - 1):
+            for l_idx, dilation in enumerate(dilations[b_idx]):
+                w = self.variables[v_idx * 2]
+                b = self.variables[v_idx * 2 + 1]
+                if dilation == 1:
+                    conv = tf.nn.conv2d(current, w, strides=[1, 1, 1, 1], padding='SAME')
+                else:
+                    conv = tf.nn.atrous_conv2d(current, w, dilation, padding='SAME')
+                current = tf.nn.relu(tf.nn.bias_add(conv, b))
+                v_idx += 1
+            # Optional pooling and dropout after each block.
+            if b_idx < 3:
+                current = tf.nn.max_pool(current,
+                                         ksize=[1, ks, ks, 1],
+                                         strides=[1, 2, 2, 1],
+                                         padding='SAME')
+            elif b_idx == 3:
+                current = tf.nn.max_pool(current,
+                                         ksize=[1, ks, ks, 1],
+                                         strides=[1, 1, 1, 1],
+                                         padding='SAME')
+            elif b_idx == 4:
+                current = tf.nn.max_pool(current,
+                                         ksize=[1, ks, ks, 1],
+                                         strides=[1, 1, 1, 1],
+                                         padding='SAME')
+                current = tf.nn.avg_pool(current,
+                                         ksize=[1, ks, ks, 1],
+                                         strides=[1, 1, 1, 1],
+                                         padding='SAME')
+            elif b_idx <= 6:
+                current = tf.nn.dropout(current, keep_prob=keep_prob)
+
+        # Classification layer; no ReLU.
+        w = self.variables[v_idx * 2]
+        b = self.variables[v_idx * 2 + 1]
+        conv = tf.nn.conv2d(current, w, strides=[1, 1, 1, 1], padding='SAME')
+        current = tf.nn.bias_add(conv, b)
+
+        return current
+
+
     
     def prepare_label(self, input_batch, new_size):
         """Resize masks and perform one-hot encoding.
@@ -186,7 +246,7 @@ class DeepLabLFOVModel(object):
         return tf.cast(raw_output, tf.uint8)
         
     
-    def loss(self, img_batch, label_batch):
+    def loss(self, img_batch, label_batch,attention_map):
         """Create the network, run inference on the input batch and compute loss.
         
         Args:
@@ -195,7 +255,8 @@ class DeepLabLFOVModel(object):
         Returns:
           Pixel-wise softmax loss.
         """
-        raw_output = self._create_network(tf.cast(img_batch, tf.float32), keep_prob=tf.constant(0.5))
+        raw_output = self._create_network(tf.cast(img_batch, tf.float32),attention_map, keep_prob=tf.constant(0.5))
+        #turn a matrix into a vector!!!
         prediction = tf.reshape(raw_output, [-1, n_classes])
         
         # Need to resize labels and convert using one-hot encoding.
@@ -204,6 +265,12 @@ class DeepLabLFOVModel(object):
         
         # Pixel-wise softmax loss.
         loss = tf.nn.softmax_cross_entropy_with_logits(logits=prediction, labels=gt)
-        reduced_loss = tf.reduce_mean(loss)
+        main_loss = tf.reduce_mean(loss)
+
+        ##deal with attention
+        attention_output = self._create_attention_network(tf.cast(img_batch, tf.float32), keep_prob=tf.constant(0.5))
+        attention_target = tf.not_equal(gt,prediction)
+        attention_loss = tf.nn.l2_loss(attention_output-attention_target,name="attention_loss")
+
         
-        return reduced_loss
+        return main_loss,attention_loss,attention_target

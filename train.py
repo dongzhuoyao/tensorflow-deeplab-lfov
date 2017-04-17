@@ -33,7 +33,7 @@ RANDOM_SCALE = True
 RESTORE_FROM = './deeplab_lfov.ckpt'
 SAVE_DIR = './images/'
 SAVE_NUM_IMAGES = 2
-SAVE_PRED_EVERY = 500
+SAVE_PRED_EVERY = 500000
 SNAPSHOT_DIR = './snapshots/'
 WEIGHTS_PATH   = None
 
@@ -117,13 +117,17 @@ def main():
     # Create network.
     net = DeepLabLFOVModel(args.weights_path)
 
+    image_batch_placeholder = tf.placeholder(tf.float32)
+    label_batch_placeholder = tf.placeholder(tf.float32)
+    attention_map_placeholder = tf.placeholder(tf.float32)
+
     # Define the loss and optimisation parameters.
-    loss = net.loss(image_batch, label_batch)
+    loss,attention_loss,attention_map = net.loss(image_batch_placeholder, label_batch_placeholder,attention_map_placeholder)
     optimiser = tf.train.AdamOptimizer(learning_rate=args.learning_rate)
     trainable = tf.trainable_variables()
     optim = optimiser.minimize(loss, var_list=trainable)
     
-    pred = net.preds(image_batch)
+    pred = net.preds(image_batch_placeholder)
     
     # Set up tf session and initialize variables. 
     config = tf.ConfigProto()
@@ -147,9 +151,13 @@ def main():
     # Iterate over training steps.
     for step in range(args.num_steps):
         start_time = time.time()
+
+        cur_imgs,cur_labels = sess.run([image_batch,label_batch])
         
         if step % args.save_pred_every == 0:
-            loss_value, images, labels, preds, _ = sess.run([loss, image_batch, label_batch, pred, optim])
+            images = cur_imgs
+            labels = cur_labels
+            loss_value, preds, _ = sess.run([loss, pred, optim],feed_dict={image_batch_placeholder:cur_imgs,label_batch_placeholder:cur_labels})
             fig, axes = plt.subplots(args.save_num_images, 3, figsize = (16, 12))
             for i in xrange(args.save_num_images):
                 axes.flat[i * 3].set_title('data')
@@ -164,9 +172,33 @@ def main():
             plt.close(fig)
             save(saver, sess, args.snapshot_dir, step)
         else:
-            loss_value, _ = sess.run([loss, optim])
+            #do Loop-3 recurrent training
+            loss_value_1,attention_loss_value_1,attention_map_value, _ = sess.run([loss,attention_loss,attention_map,optim],feed_dict=
+            {image_batch_placeholder:cur_imgs,
+             label_batch_placeholder:cur_labels,
+             attention_map_placeholder:tf.zeros([args.batch_size,1,h,w], tf.float32)
+             })
+
+            loss_value_2, attention_loss_value_2, attention_map_value, _ = sess.run(
+                [loss, attention_loss, attention_map, optim], feed_dict=
+                {image_batch_placeholder: cur_imgs,
+                 label_batch_placeholder: cur_labels,
+                 attention_map_placeholder: attention_map_value
+                 })
+
+
+            loss_value_3, attention_loss_value_3, attention_map_value, _ = sess.run(
+                [loss, attention_loss, attention_map, optim], feed_dict=
+                {image_batch_placeholder: cur_imgs,
+                 label_batch_placeholder: cur_labels,
+                 attention_map_placeholder: attention_map_value
+                 })
+
         duration = time.time() - start_time
-        print('step {:d} \t loss = {:.3f}, ({:.3f} sec/step)'.format(step, loss_value, duration))
+        print('step {:d} \t loss_value_1 = {:.3f}'.format(step, loss_value_1))
+        print('step {:d} \t loss_value_1 = {:.3f}'.format(step, loss_value_2))
+        print('step {:d} \t loss_value_1 = {:.3f}'.format(step, loss_value_3))
+        print('step {:d} \t  ({:.3f} sec/step)'.format(step, duration))
     coord.request_stop()
     coord.join(threads)
     
