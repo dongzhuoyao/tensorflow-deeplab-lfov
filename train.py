@@ -126,7 +126,8 @@ def main():
     optimiser = tf.train.AdamOptimizer(learning_rate=args.learning_rate)
     trainable = tf.trainable_variables()
     optim = optimiser.minimize(loss, var_list=trainable)
-    
+
+    tf.get_variable_scope().reuse_variables()
     pred = net.preds(image_batch_placeholder,attention_map_placeholder)
     
     # Set up tf session and initialize variables. 
