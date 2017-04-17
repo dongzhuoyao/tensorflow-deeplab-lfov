@@ -48,7 +48,7 @@ def read_images_from_disk(input_queue, input_size, random_scale):
             scale = tf.random_uniform([1], minval=0.75, maxval=1.25, dtype=tf.float32, seed=None)
             h_new = tf.to_int32(tf.multiply(tf.to_float(tf.shape(img)[0]), scale))
             w_new = tf.to_int32(tf.multiply(tf.to_float(tf.shape(img)[1]), scale))
-            new_shape = tf.squeeze(tf.pack([h_new, w_new]), squeeze_dims=[1])
+            new_shape = tf.squeeze(tf.stack([h_new, w_new]), squeeze_dims=[1])
             img = tf.image.resize_images(img, new_shape)
             label = tf.image.resize_nearest_neighbor(tf.expand_dims(label, 0), new_shape)
             label = tf.squeeze(label, squeeze_dims=[0]) # resize_image_with_crop_or_pad accepts 3D-tensor.

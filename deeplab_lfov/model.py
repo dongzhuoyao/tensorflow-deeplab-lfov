@@ -199,7 +199,7 @@ class DeepLabLFOVModel(object):
         prediction = tf.reshape(raw_output, [-1, n_classes])
         
         # Need to resize labels and convert using one-hot encoding.
-        label_batch = self.prepare_label(label_batch, tf.pack(raw_output.get_shape()[1:3]))
+        label_batch = self.prepare_label(label_batch, tf.stack(raw_output.get_shape()[1:3]))
         gt = tf.reshape(label_batch, [-1, n_classes])
         
         # Pixel-wise softmax loss.
