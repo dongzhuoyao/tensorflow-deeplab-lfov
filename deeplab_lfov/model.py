@@ -262,12 +262,15 @@ class DeepLabLFOVModel(object):
           Pixel-wise softmax loss.
         """
         raw_output = self._create_network(tf.cast(img_batch, tf.float32),attention_map, keep_prob=tf.constant(0.5))
+        print "predict before reshape: {}".format(raw_output.get_shape())
         #turn a matrix into a vector!!!
         prediction = tf.reshape(raw_output, [-1, n_classes])
+        print "predict shape: {}".format(prediction.get_shape())
         
         # Need to resize labels and convert using one-hot encoding.
         label_batch = self.prepare_label(label_batch, tf.stack(raw_output.get_shape()[1:3]))
         gt = tf.reshape(label_batch, [-1, n_classes])
+        print "gt shape: {}".format(gt.get_shape())
         
         # Pixel-wise softmax loss.
         loss = tf.nn.softmax_cross_entropy_with_logits(logits=prediction, labels=gt)
@@ -275,6 +278,8 @@ class DeepLabLFOVModel(object):
 
         ##deal with attention
         attention_output = self._create_attention_network(tf.cast(img_batch, tf.float32), keep_prob=tf.constant(0.5))
+        attention_output = tf.reshape(attention_output,[-1,n_classes])
+        
         attention_target = tf.cast(tf.not_equal(gt,prediction),tf.float32)
         attention_loss = tf.nn.l2_loss(attention_output-attention_target,name="attention_loss")
 
