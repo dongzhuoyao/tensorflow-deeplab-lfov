@@ -55,7 +55,7 @@ def read_images_from_disk(input_queue, input_size, random_scale):
         img = tf.image.resize_image_with_crop_or_pad(img, h, w)
         label = tf.image.resize_image_with_crop_or_pad(label, h, w)
     # RGB -> BGR.
-    img_r, img_g, img_b = tf.split(value=img, num_or_size=3, axis=2 )
+    img_r, img_g, img_b = tf.split(value=img, num_or_size_splits=3, axis=2 )
     img = tf.cast(tf.concat(2, [img_b, img_g, img_r]), dtype=tf.float32)
     # Extract mean.
     img -= IMG_MEAN 
