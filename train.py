@@ -166,7 +166,7 @@ def main():
             labels = cur_labels
             loss_value, preds, _ = sess.run([loss, pred, optim],feed_dict={
                 image_batch_placeholder:cur_imgs,label_batch_placeholder:cur_labels,
-                attention_map_placeholder: tf.zeros([args.batch_size, h, w, 1], tf.float32)
+                attention_map_placeholder: np.zeros((args.batch_size, h, w, 1), dtype=np.float32)
             })
             fig, axes = plt.subplots(args.save_num_images, 3, figsize = (16, 12))
             for i in xrange(args.save_num_images):
@@ -186,7 +186,7 @@ def main():
             loss_value_1,attention_loss_value_1,attention_map_value, _ = sess.run([loss,attention_loss,attention_map,optim],feed_dict=
             {image_batch_placeholder:cur_imgs,
              label_batch_placeholder:cur_labels,
-             attention_map_placeholder:tf.zeros([args.batch_size,h,w,1], tf.float32)
+             attention_map_placeholder:np.zeros((args.batch_size,h,w,1), dtype=np.float32)
              })
 
             loss_value_2, attention_loss_value_2, attention_map_value, _ = sess.run(
