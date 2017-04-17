@@ -289,7 +289,7 @@ class DeepLabLFOVModel(object):
 
 
         attention_output = tf.reshape(attention_output,[-1,1])
-
+        attention_output = tf.cast(attention_output,tf.float32)
 
         attention_target = tf.cast(tf.not_equal(gt_upscaled,pre_upscaled),tf.float32)
         attention_target = tf.reshape(attention_target,[-1,1])
