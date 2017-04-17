@@ -298,7 +298,7 @@ class DeepLabLFOVModel(object):
         attention_loss = tf.nn.l2_loss(attention_output-attention_target,name="attention_loss")
 
         #turn it into matrix again,convinient for next loop.
-        attention_target = tf.reshape(attention_target,[tf.shape(img_batch)[0:3],3])
+        attention_target = tf.reshape(attention_target,[tf.shape(img_batch)[0],tf.shape(img_batch)[1],tf.shape(img_batch)[2],1])
 
         print "attention map size: ".format(attention_target.get_shape())
 
