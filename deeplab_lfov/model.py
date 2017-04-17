@@ -294,7 +294,9 @@ class DeepLabLFOVModel(object):
         attention_target = tf.cast(tf.not_equal(gt_upscaled,pre_upscaled),tf.float32)
         attention_target = tf.reshape(attention_target,[-1,1])
 
-
+        print "attention_output size: ".format(attention_output.get_shape())
+        print "attention_target size: ".format(attention_target.get_shape())
+        
         attention_loss = tf.nn.l2_loss(attention_output-attention_target,name="attention_loss")
 
         #turn it into matrix again,convinient for next loop.
