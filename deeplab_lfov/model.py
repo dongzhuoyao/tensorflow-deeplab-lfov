@@ -278,12 +278,25 @@ class DeepLabLFOVModel(object):
         loss = tf.nn.softmax_cross_entropy_with_logits(logits=prediction, labels=gt)
         main_loss = tf.reduce_mean(loss)
 
-        ##deal with attention
+        ##deal with attention,need upscale!
         attention_output = self._create_attention_network(tf.cast(img_batch, tf.float32), keep_prob=tf.constant(0.5))
-        attention_output = tf.reshape(attention_output,[-1,n_classes])
+        attention_output = tf.image.resize_bilinear(attention_output, tf.shape(img_batch)[1:3, ])
+        attention_output = tf.argmax(attention_output, dimension=3)
 
-        attention_target = tf.cast(tf.not_equal(gt,prediction),tf.float32)
+
+        attention_output = tf.reshape(attention_output,[-1,1])
+
+        gt_upscaled = tf.image.resize_bilinear(gt, tf.shape(img_batch)[1:3, ])
+        pre_upscaled = tf.image.resize_bilinear(prediction, tf.shape(img_batch)[1:3, ])
+
+        attention_target = tf.cast(tf.not_equal(gt_upscaled,pre_upscaled),tf.float32)
+        attention_target = tf.reshape(attention_target,[-1,1])
+
         attention_loss = tf.nn.l2_loss(attention_output-attention_target,name="attention_loss")
 
-        
+        #turn it into matrix again,convinient for next loop.
+        attention_target = tf.reshape(attention_target,[tf.shape(img_batch)[0:3],3])
+
+        print "attention map size: ".format(attention_target.get_shape())
+
         return main_loss,attention_loss,attention_target
