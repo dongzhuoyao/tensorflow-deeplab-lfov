@@ -120,7 +120,7 @@ class DeepLabLFOVModel(object):
                 if not is_deal_first_layer:
                     w_append = tf.get_variable("filter_of_attention_map", shape=[3,3,1,64],
                                         initializer=tf.contrib.layers.xavier_initializer())
-                
+
                     w = tf.concat([w,w_append],2)
                     is_deal_first_layer = 1
 

@@ -143,7 +143,8 @@ def main():
     sess.run(init)
     
     # Saver for storing checkpoints of the model.
-    saver = tf.train.Saver(var_list=trainable, max_to_keep=40)
+    #saver = tf.train.Saver(var_list=trainable, max_to_keep=40),don't need initiate "filter_of_attention_map"!!!
+    saver = tf.train.Saver(var_list=[x for x in trainable if x.name !="filter_of_attention_map"], max_to_keep=40)
     if args.restore_from is not None:
         load(saver, sess, args.restore_from)
     
