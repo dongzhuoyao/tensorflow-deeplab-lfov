@@ -133,7 +133,7 @@ def main():
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
     sess = tf.Session(config=config)
-    init = tf.global_variables_initializer([x for x in trainable if x.name !="filter_of_attention_map"])
+    init = tf.global_variables_initializer()
     sess.run(init)
 
     # check the shape
