@@ -203,11 +203,11 @@ def main():
                  label_batch_placeholder: cur_labels,
                  attention_map_placeholder: attention_map_value
                  })
+            print('step {:d} \t loss_value_1 = {:.3f}'.format(step, loss_value_1))
+            print('step {:d} \t loss_value_1 = {:.3f}'.format(step, loss_value_2))
+            print('step {:d} \t loss_value_1 = {:.3f}'.format(step, loss_value_3))
 
         duration = time.time() - start_time
-        print('step {:d} \t loss_value_1 = {:.3f}'.format(step, loss_value_1))
-        print('step {:d} \t loss_value_1 = {:.3f}'.format(step, loss_value_2))
-        print('step {:d} \t loss_value_1 = {:.3f}'.format(step, loss_value_3))
         print('step {:d} \t  ({:.3f} sec/step)'.format(step, duration))
     coord.request_stop()
     coord.join(threads)
