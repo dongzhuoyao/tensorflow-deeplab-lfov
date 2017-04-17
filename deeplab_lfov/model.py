@@ -107,7 +107,7 @@ class DeepLabLFOVModel(object):
         Returns:
           A downsampled segmentation mask. 
         """
-        current = tf.stack([input_batch,attention_map],1)
+        current = tf.concat([input_batch,attention_map],1)
         
         v_idx = 0 # Index variable.
         
