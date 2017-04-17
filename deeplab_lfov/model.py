@@ -264,6 +264,8 @@ class DeepLabLFOVModel(object):
           Pixel-wise softmax loss.
         """
         raw_output = self._create_network(tf.cast(img_batch, tf.float32),attention_map, keep_prob=tf.constant(0.5))
+        pre_upscaled = tf.image.resize_bilinear(raw_output, tf.shape(img_batch)[1:3, ])
+
         print "predict before reshape: {}".format(raw_output.get_shape())
         #turn a matrix into a vector!!!
         prediction = tf.reshape(raw_output, [-1, n_classes])
@@ -271,6 +273,8 @@ class DeepLabLFOVModel(object):
         
         # Need to resize labels and convert using one-hot encoding.
         label_batch = self.prepare_label(label_batch, tf.stack(raw_output.get_shape()[1:3]))
+        gt_upscaled = tf.image.resize_bilinear(label_batch, tf.shape(img_batch)[1:3, ])
+
         gt = tf.reshape(label_batch, [-1, n_classes])
         print "gt shape: {}".format(gt.get_shape())
         
@@ -286,11 +290,10 @@ class DeepLabLFOVModel(object):
 
         attention_output = tf.reshape(attention_output,[-1,1])
 
-        gt_upscaled = tf.image.resize_bilinear(gt, tf.shape(img_batch)[1:3, ])
-        pre_upscaled = tf.image.resize_bilinear(prediction, tf.shape(img_batch)[1:3, ])
 
         attention_target = tf.cast(tf.not_equal(gt_upscaled,pre_upscaled),tf.float32)
         attention_target = tf.reshape(attention_target,[-1,1])
+
 
         attention_loss = tf.nn.l2_loss(attention_output-attention_target,name="attention_loss")
 
