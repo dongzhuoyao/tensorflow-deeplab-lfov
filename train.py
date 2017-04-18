@@ -131,7 +131,7 @@ def main():
     optim = optimiser.minimize(loss, var_list=trainable)
 
     tf.get_variable_scope().reuse_variables()
-    pred = net.preds(image_batch_placeholder,attention_map_placeholder)
+    pred_result = net.preds(image_batch_placeholder,attention_map_placeholder)
     
     # Set up tf session and initialize variables. 
     config = tf.ConfigProto()
@@ -179,14 +179,17 @@ def main():
             labels = cur_labels
 
             #do predict
-            preds_result = sess.run([pred],feed_dict=
+            preds_result_value = sess.run([pred_result],feed_dict=
             {image_batch_placeholder:cur_imgs,
              attention_map_placeholder:next_attention_map
              })
 
             fig, axes = plt.subplots(args.save_num_images, 3, figsize=(16, 12))
+            print("images type: {}".format(type(images)))
+            print("labels type: {}".format(type(labels)))
+            print("preds_result_value type: {},len {}".format(type(preds_result_value),len(preds_result_value)))
 
-            print("preds_result shape: {}".format(preds_result.get_shape()))
+            #print("preds_result shape: {}".format(preds_result_value.get_shape()))
             for i in xrange(args.save_num_images):
                 axes.flat[i * 3].set_title('data')
                 axes.flat[i * 3].imshow((images[i] + IMG_MEAN)[:, :, ::-1].astype(np.uint8))
@@ -195,7 +198,7 @@ def main():
                 axes.flat[i * 3 + 1].imshow(decode_labels(labels[i, :, :, 0]))
 
                 axes.flat[i * 3 + 2].set_title('pred')
-                axes.flat[i * 3 + 2].imshow(decode_labels(preds_result[i, :, :, 0]))
+                axes.flat[i * 3 + 2].imshow(decode_labels(preds_result_value[i, :, :, 0]))
             plt.savefig(args.save_dir + str(start_time) + ".png")
             plt.close(fig)
             save(saver, sess, args.snapshot_dir, step)
