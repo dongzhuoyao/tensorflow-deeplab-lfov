@@ -267,7 +267,7 @@ class DeepLabLFOVModel(object):
 
         pre_upscaled = tf.image.resize_bilinear(raw_output, tf.shape(img_batch)[1:3, ])
         pre_upscaled = tf.argmax(pre_upscaled, dimension=3)
-        pre_upscaled = tf.expand_dims(pre_upscaled, dim=3)  # from 3-D to 4-D,规范
+        pre_upscaled = tf.expand_dims(pre_upscaled, dim=3)  # from 3-D to 4-D
         pre_upscaled = tf.cast(pre_upscaled, tf.float32)
 
 
@@ -289,7 +289,7 @@ class DeepLabLFOVModel(object):
 
         gt_upscaled = tf.image.resize_bilinear(label_batch, tf.shape(img_batch)[1:3, ])
         gt_upscaled = tf.argmax(gt_upscaled, dimension=3)
-        gt_upscaled = tf.expand_dims(gt_upscaled, dim=3)  # from 3-D to 4-D,规范
+        gt_upscaled = tf.expand_dims(gt_upscaled, dim=3)  # from 3-D to 4-D
         gt_upscaled= tf.cast(gt_upscaled, tf.float32)
 
 
