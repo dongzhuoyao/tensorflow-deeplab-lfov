@@ -35,7 +35,7 @@ SAVE_DIR = './images/'
 SAVE_NUM_IMAGES = 2
 SAVE_PRED_EVERY = 500
 SNAPSHOT_DIR = './snapshots/'
-WEIGHTS_PATH   = None
+WEIGHTS_PATH   = './deeplab_lfov.ckpt'
 
 IMG_MEAN = np.array((104.00698793,116.66876762,122.67891434), dtype=np.float32)
 
@@ -72,8 +72,13 @@ def get_arguments():
                         help="Path to the file with caffemodel weights. "
                              "If not set, all the variables are initialised randomly.")
     parser.add_argument("--recurrent_times", type=int, default=3,
-                        help="Path to the file with caffemodel weights. "
-                             "If not set, all the variables are initialised randomly.")
+                        help="recurrent_times"
+                             "recurrent_times")
+
+    parser.add_argument("--summary_freq", type=int, default=100,
+                        help="summary_freq"
+                             "summary_freq")
+
     return parser.parse_args()
 
 def save(saver, sess, logdir, step):
@@ -207,6 +212,11 @@ def main():
             plt.savefig(args.save_dir + str(start_time) + ".png")
             plt.close(fig)
             save(saver, sess, args.snapshot_dir, step)
+
+            if step % args.summary_freq == 0:
+                images = cur_imgs
+                labels = cur_labels
+
 
         duration = time.time() - start_time
         print('step {:d} \t  ({:.3f} sec/step)'.format(step, duration))
