@@ -33,7 +33,7 @@ RANDOM_SCALE = True
 RESTORE_FROM = './deeplab_lfov.ckpt'
 SAVE_DIR = './images/'
 SAVE_NUM_IMAGES = 2
-SAVE_PRED_EVERY = 500000
+SAVE_PRED_EVERY = 500
 SNAPSHOT_DIR = './snapshots/'
 WEIGHTS_PATH   = None
 
@@ -69,6 +69,9 @@ def get_arguments():
     parser.add_argument("--snapshot_dir", type=str, default=SNAPSHOT_DIR,
                         help="Where to save snapshots of the model.")
     parser.add_argument("--weights_path", type=str, default=WEIGHTS_PATH,
+                        help="Path to the file with caffemodel weights. "
+                             "If not set, all the variables are initialised randomly.")
+    parser.add_argument("--recurrent_times", type=int, default=3,
                         help="Path to the file with caffemodel weights. "
                              "If not set, all the variables are initialised randomly.")
     return parser.parse_args()
@@ -161,14 +164,27 @@ def main():
 
         cur_imgs,cur_labels = sess.run([image_batch,label_batch])
         
+        #do Loop recurrent training
+        next_attention_map = np.zeros((args.batch_size,h,w,1), dtype=np.float32)
+        for i in xrange(args.recurrent_times):
+            loss_value_current,attention_loss_value_current,next_attention_map, _ = sess.run([loss,attention_loss,attention_map,optim],feed_dict=
+            {image_batch_placeholder:cur_imgs,
+             label_batch_placeholder:cur_labels,
+             attention_map_placeholder:next_attention_map
+             })
+
+            print('step {:d} \t loss_value_{} = {:.3f},attention_loss_{} = {}'.format(step,i,loss_value_current,i,attention_loss_value_current))
         if step % args.save_pred_every == 0:
             images = cur_imgs
             labels = cur_labels
-            loss_value, preds, _ = sess.run([loss, pred, optim],feed_dict={
-                image_batch_placeholder:cur_imgs,label_batch_placeholder:cur_labels,
-                attention_map_placeholder: np.zeros((args.batch_size, h, w, 1), dtype=np.float32)
-            })
-            fig, axes = plt.subplots(args.save_num_images, 3, figsize = (16, 12))
+
+            #do predict
+            preds = sess.run([pred],feed_dict=
+            {image_batch_placeholder:cur_imgs,
+             attention_map_placeholder:next_attention_map
+             })
+
+            fig, axes = plt.subplots(args.save_num_images, 3, figsize=(16, 12))
             for i in xrange(args.save_num_images):
                 axes.flat[i * 3].set_title('data')
                 axes.flat[i * 3].imshow((images[i] + IMG_MEAN)[:, :, ::-1].astype(np.uint8))
@@ -181,34 +197,12 @@ def main():
             plt.savefig(args.save_dir + str(start_time) + ".png")
             plt.close(fig)
             save(saver, sess, args.snapshot_dir, step)
-        else:
-            #do Loop-3 recurrent training
-            loss_value_1,attention_loss_value_1,attention_map_value, _ = sess.run([loss,attention_loss,attention_map,optim],feed_dict=
-            {image_batch_placeholder:cur_imgs,
-             label_batch_placeholder:cur_labels,
-             attention_map_placeholder:np.zeros((args.batch_size,h,w,1), dtype=np.float32)
-             })
-
-            loss_value_2, attention_loss_value_2, attention_map_value, _ = sess.run(
-                [loss, attention_loss, attention_map, optim], feed_dict=
-                {image_batch_placeholder: cur_imgs,
-                 label_batch_placeholder: cur_labels,
-                 attention_map_placeholder: attention_map_value
-                 })
-
-
-            loss_value_3, attention_loss_value_3, attention_map_value, _ = sess.run(
-                [loss, attention_loss, attention_map, optim], feed_dict=
-                {image_batch_placeholder: cur_imgs,
-                 label_batch_placeholder: cur_labels,
-                 attention_map_placeholder: attention_map_value
-                 })
-            print('step {:d} \t loss_value_1 = {:.3f}'.format(step, loss_value_1))
-            print('step {:d} \t loss_value_1 = {:.3f}'.format(step, loss_value_2))
-            print('step {:d} \t loss_value_1 = {:.3f}'.format(step, loss_value_3))
 
         duration = time.time() - start_time
         print('step {:d} \t  ({:.3f} sec/step)'.format(step, duration))
+
+
+
     coord.request_stop()
     coord.join(threads)
     
