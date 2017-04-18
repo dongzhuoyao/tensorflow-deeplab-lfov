@@ -185,6 +185,7 @@ def main():
              })
 
             fig, axes = plt.subplots(args.save_num_images, 3, figsize=(16, 12))
+            print("predict shape: {}".format(preds.get_shape()))
             for i in xrange(args.save_num_images):
                 axes.flat[i * 3].set_title('data')
                 axes.flat[i * 3].imshow((images[i] + IMG_MEAN)[:, :, ::-1].astype(np.uint8))
