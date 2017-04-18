@@ -19,7 +19,7 @@ import numpy as np
 
 from deeplab_lfov import DeepLabLFOVModel, ImageReader, decode_labels
 
-DATA_DIRECTORY = '/home//VOCdevkit'
+DATA_DIRECTORY = '/home/VOCdevkit'
 DATA_LIST_PATH = './dataset/val.txt'
 NUM_STEPS = 1449
 RESTORE_FROM = None

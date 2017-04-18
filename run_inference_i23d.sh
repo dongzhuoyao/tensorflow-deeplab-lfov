@@ -1,0 +1,1 @@
+python inference.py /cdata/hut/dataset/pascalvoc2012/normal_voc2012/test/ ./model.ckpt-pretrained

@@ -1,0 +1,1 @@
+python inference.py /home/hutao1/dresult/normal_voc2012/test ./model.ckpt-pretrained
