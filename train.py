@@ -35,7 +35,7 @@ SAVE_DIR = './images/'
 SAVE_NUM_IMAGES = 2
 SAVE_PRED_EVERY = 500
 SNAPSHOT_DIR = './snapshots/'
-WEIGHTS_PATH   = './deeplab_lfov.ckpt'
+WEIGHTS_PATH   = None
 
 IMG_MEAN = np.array((104.00698793,116.66876762,122.67891434), dtype=np.float32)
 
