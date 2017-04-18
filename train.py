@@ -145,12 +145,12 @@ def main():
     for v in tf.global_variables():
         print("{}:  {}".format(v.name, v.get_shape()))
 
-    var_to_be_restored =  [x for x in trainable if x.name !="filter_of_attention_map"]
+    var_to_be_restored =  [x for x in trainable if x.name != "filter_of_attention_map"]
     # Saver for storing checkpoints of the model.
     #saver = tf.train.Saver(var_list=trainable, max_to_keep=40),#don't need initiate "filter_of_attention_map"!!!
     for tmp in var_to_be_restored:
-        print("variable name: {}".format(tmp.name))
-        
+        print("variable name: {},type: ".format(tmp.name,type(tmp.name)))
+
     saver = tf.train.Saver(var_list=var_to_be_restored, max_to_keep=40)
     if args.restore_from is not None:
        load(saver, sess, args.restore_from)
