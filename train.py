@@ -159,7 +159,7 @@ def main():
         os.makedirs(args.save_dir)
    
     # Iterate over training steps.
-    for step in range(args.num_steps):
+    for step in range(1,args.num_steps):
         start_time = time.time()
 
         cur_imgs,cur_labels = sess.run([image_batch,label_batch])
