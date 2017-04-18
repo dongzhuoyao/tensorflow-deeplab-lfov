@@ -264,17 +264,21 @@ class DeepLabLFOVModel(object):
           Pixel-wise softmax loss.
         """
         raw_output = self._create_network(tf.cast(img_batch, tf.float32),attention_map, keep_prob=tf.constant(0.5))
+
         pre_upscaled = tf.image.resize_bilinear(raw_output, tf.shape(img_batch)[1:3, ])
+        pre_upscaled = tf.argmax(pre_upscaled, dimension=3)
+        pre_upscaled = tf.expand_dims(pre_upscaled, dim=3)  # from 3-D to 4-D,规范
+        pre_upscaled = tf.cast(pre_upscaled, tf.float32)
+
 
         print "predict before reshape: {}".format(raw_output.get_shape())
         #turn a matrix into a vector!!!
         prediction = tf.reshape(raw_output, [-1, n_classes])
         print "predict shape: {}".format(prediction.get_shape())
-        
+
+
         # Need to resize labels and convert using one-hot encoding.
         label_batch = self.prepare_label(label_batch, tf.stack(raw_output.get_shape()[1:3]))
-        gt_upscaled = tf.image.resize_bilinear(label_batch, tf.shape(img_batch)[1:3, ])
-
         gt = tf.reshape(label_batch, [-1, n_classes])
         print "gt shape: {}".format(gt.get_shape())
         
@@ -282,19 +286,18 @@ class DeepLabLFOVModel(object):
         loss = tf.nn.softmax_cross_entropy_with_logits(logits=prediction, labels=gt)
         main_loss = tf.reduce_mean(loss)
 
-        ##deal with attention,need upscale!
-        attention_output = self._create_attention_network(tf.cast(img_batch, tf.float32), keep_prob=tf.constant(0.5))
-        attention_output = tf.image.resize_bilinear(attention_output, tf.shape(img_batch)[1:3, ])
-        attention_output = tf.argmax(attention_output, dimension=3)
-        attention_output = tf.cast(attention_output,tf.float32)
 
-        attention_target = tf.cast(tf.not_equal(gt_upscaled,pre_upscaled),tf.float32)
+        gt_upscaled = tf.image.resize_bilinear(label_batch, tf.shape(img_batch)[1:3, ])
+        gt_upscaled = tf.argmax(gt_upscaled, dimension=3)
+        gt_upscaled = tf.expand_dims(gt_upscaled, dim=3)  # from 3-D to 4-D,规范
+        gt_upscaled= tf.cast(gt_upscaled, tf.float32)
 
-        print "attention_output size: {}".format(attention_output.get_shape())
-        print "attention_target size: {}".format(attention_target.get_shape())
 
-        attention_loss = tf.nn.l2_loss(attention_output-attention_target,name="attention_loss")
+        attention_map = tf.cast(tf.not_equal(gt_upscaled,pre_upscaled),tf.float32)
 
-        print "attention map size: {}".format(attention_target.get_shape())
+        print "attention_map size: {}".format(attention_map.get_shape())
 
-        return main_loss,attention_loss,attention_target
+
+        attention_loss = tf.nn.l2_loss(attention_map,name="attention_loss")
+
+        return main_loss,attention_loss,attention_map
