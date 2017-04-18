@@ -183,11 +183,13 @@ def main():
             {image_batch_placeholder:cur_imgs,
              attention_map_placeholder:next_attention_map
              })
+            #single value
+            preds_result_value =preds_result_value[0]
 
             fig, axes = plt.subplots(args.save_num_images, 3, figsize=(16, 12))
             print("images type: {}".format(type(images)))
             print("labels type: {}".format(type(labels)))
-            print("preds_result_value type: {},shape {}".format(type(preds_result_value[0]),(preds_result_value[0]).get_shape()))
+            #print("preds_result_value type: {},shape {}".format(type(preds_result_value[0]),(preds_result_value[0]).get_shape()))
 
             #print("preds_result shape: {}".format(preds_result_value.get_shape()))
             for i in xrange(args.save_num_images):
