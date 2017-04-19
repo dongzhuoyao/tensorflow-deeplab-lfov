@@ -173,7 +173,7 @@ def main():
             plt.close(fig)
             save(saver, sess, args.snapshot_dir, step)
         else:
-            loss_value, _ = sess.run([loss, optim])
+            loss_value, _ = sess.run([loss, optim],feed_dict={learning_rate:cur_lr})
         duration = time.time() - start_time
         print('step {:d} \t loss = {:.3f}, ({:.3f} sec/step)'.format(step, loss_value, duration))
     coord.request_stop()
