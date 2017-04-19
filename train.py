@@ -5,6 +5,9 @@ This script trains the model using augmented PASCAL VOC dataset,
 which contains approximately 10000 images for training and 1500 images for validation.
 """
 
+#SGDOptimiser,gradient multi 0.1 for every 2000 batch,weight_cay 0.05,momention 0.9.
+
+
 from __future__ import print_function
 
 import argparse
@@ -19,7 +22,7 @@ import matplotlib.pyplot as plt
 
 import tensorflow as tf
 import numpy as np
-
+import math
 from deeplab_lfov import DeepLabLFOVModel, ImageReader, decode_labels
 
 BATCH_SIZE = 16
@@ -118,8 +121,9 @@ def main():
     net = DeepLabLFOVModel(args.weights_path)
 
     # Define the loss and optimisation parameters.
-    loss = net.loss(image_batch, label_batch)
-    optimiser = tf.train.AdamOptimizer(learning_rate=args.learning_rate)
+    loss = net.loss(image_batch, label_batch,weight_decay=0.05)
+    learning_rate = tf.placeholder(tf.float32, shape=[])
+    optimiser = tf.train.MomentumOptimizer(learning_rate=learning_rate,momentum=0.9)
     trainable = tf.trainable_variables()
     optim = optimiser.minimize(loss, var_list=trainable)
     
@@ -147,9 +151,14 @@ def main():
     # Iterate over training steps.
     for step in range(args.num_steps):
         start_time = time.time()
-        
+        #get learning rate
+        lr_scale = math.floor(step/2000);
+        cur_lr = args.learning_rate/math.pow(10,lr_scale)
+        print ("current learning rate: {}".format(cur_lr))
+
+
         if step % args.save_pred_every == 0:
-            loss_value, images, labels, preds, _ = sess.run([loss, image_batch, label_batch, pred, optim])
+            loss_value, images, labels, preds, _ = sess.run([loss, image_batch, label_batch, pred, optim],feed_dict={learning_rate:cur_lr})
             fig, axes = plt.subplots(args.save_num_images, 3, figsize = (16, 12))
             for i in xrange(args.save_num_images):
                 axes.flat[i * 3].set_title('data')

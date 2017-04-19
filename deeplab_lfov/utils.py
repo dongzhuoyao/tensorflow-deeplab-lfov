@@ -29,3 +29,5 @@ def decode_labels(mask):
             if k < 21:
                 pixels[k_,j_] = label_colours[k]
     return np.array(img)
+
+

@@ -186,7 +186,7 @@ class DeepLabLFOVModel(object):
         return tf.cast(raw_output, tf.uint8)
         
     
-    def loss(self, img_batch, label_batch):
+    def loss(self, img_batch, label_batch,weight_decay = 0.05):
         """Create the network, run inference on the input batch and compute loss.
         
         Args:
@@ -205,5 +205,8 @@ class DeepLabLFOVModel(object):
         # Pixel-wise softmax loss.
         loss = tf.nn.softmax_cross_entropy_with_logits(logits=prediction, labels=gt)
         reduced_loss = tf.reduce_mean(loss)
-        
+
+        reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
+        loss = reduced_loss + weight_decay * sum(reg_losses)
+
         return reduced_loss
