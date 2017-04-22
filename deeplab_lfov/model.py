@@ -302,4 +302,4 @@ class DeepLabLFOVModel(object):
 
         attention_loss = tf.nn.l2_loss(attention_map,name="attention_loss")
 
-        return main_loss,attention_loss,attention_map
+        return main_loss,attention_loss,attention_map,pre_upscaled

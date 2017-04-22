@@ -12,6 +12,7 @@ from datetime import datetime
 import os
 import sys
 import time
+import math
 
 import matplotlib
 matplotlib.use('Agg')
@@ -33,7 +34,7 @@ RANDOM_SCALE = True
 RESTORE_FROM = './deeplab_lfov.ckpt'
 SAVE_DIR = './images/'
 SAVE_NUM_IMAGES = 2
-SAVE_PRED_EVERY = 500
+SAVE_PRED_EVERY = 20
 SNAPSHOT_DIR = './snapshots/'
 WEIGHTS_PATH   = None
 
@@ -78,6 +79,8 @@ def get_arguments():
     parser.add_argument("--summary_freq", type=int, default=100,
                         help="summary_freq"
                              "summary_freq")
+    parser.add_argument("--summay_dir", type=str, default="./summary",
+                        help="logs")
 
     return parser.parse_args()
 
@@ -130,101 +133,134 @@ def main():
     attention_map_placeholder = tf.placeholder(tf.float32,shape=[args.batch_size,h,w,1])
 
     # Define the loss and optimisation parameters.
-    loss,attention_loss,attention_map = net.loss(image_batch_placeholder, label_batch_placeholder,attention_map_placeholder)
+    loss,attention_loss,attention_map,predict_img = net.loss(image_batch_placeholder, label_batch_placeholder,attention_map_placeholder)
     optimiser = tf.train.AdamOptimizer(learning_rate=args.learning_rate)
     trainable = tf.trainable_variables()
     optim = optimiser.minimize(loss, var_list=trainable)
 
     tf.get_variable_scope().reuse_variables()
     pred_result = net.preds(image_batch_placeholder,attention_map_placeholder)
-    
-    # Set up tf session and initialize variables. 
-    config = tf.ConfigProto()
-    config.gpu_options.allow_growth = True
-    sess = tf.Session(config=config)
-    init = tf.global_variables_initializer()
-    sess.run(init)
 
-    # check the shape
-    print("begin shape check....")
-    for v in tf.global_variables():
-        print("{}:  {}".format(v.name, v.get_shape()))
+    sv = tf.train.Supervisor(logdir=args.summay_dir, save_summaries_secs=0, saver=None)
+    with sv.managed_session() as sess:
 
-    var_to_be_restored =  [x for x in trainable if u'filter_of_attention_map'.encode('utf-8') not in x.name.encode('utf-8')]
-    # Saver for storing checkpoints of the model.
-    #saver = tf.train.Saver(var_list=trainable, max_to_keep=40),#don't need initiate "filter_of_attention_map"!!!
-    for tmp in var_to_be_restored:
-        print("variable name: {},type: {}".format(tmp.name,type(tmp.name)))
+        # Set up tf session and initialize variables.
+        #config = tf.ConfigProto()
+        #config.gpu_options.allow_growth = True
+        #sess = tf.Session(config=config)
+        init = tf.global_variables_initializer()
+        sess.run(init)
 
-    saver = tf.train.Saver(var_list=var_to_be_restored, max_to_keep=40)
-    if args.restore_from is not None:
-       load(saver, sess, args.restore_from)
-    
-    # Start queue threads.
-    threads = tf.train.start_queue_runners(coord=coord, sess=sess)
-    
-    if not os.path.exists(args.save_dir):
-        os.makedirs(args.save_dir)
-   
-    # Iterate over training steps.
-    for step in range(1,args.num_steps):
-        start_time = time.time()
+        # check the shape
+        print("begin shape check....")
+        for v in tf.global_variables():
+            print("{}:  {}".format(v.name, v.get_shape()))
 
-        cur_imgs,cur_labels = sess.run([image_batch,label_batch])
-        
-        #do Loop recurrent training
-        next_attention_map = np.zeros((args.batch_size,h,w,1), dtype=np.float32)
-        for i in xrange(args.recurrent_times):
-            loss_value_current,attention_loss_value_current,next_attention_map, _ = sess.run([loss,attention_loss,attention_map,optim],feed_dict=
-            {image_batch_placeholder:cur_imgs,
-             label_batch_placeholder:cur_labels,
-             attention_map_placeholder:next_attention_map
-             })
+        # don't need initiate "filter_of_attention_map"!!!
+        var_to_be_restored =  [x for x in trainable if u'filter_of_attention_map'.encode('utf-8') not in x.name.encode('utf-8')]
+        # Saver for storing checkpoints of the model.
+        for tmp in var_to_be_restored:
+            print("variable name: {},type: {}".format(tmp.name,type(tmp.name)))
 
-            print('step {:d} \t loss_value_{} = {:.3f},attention_loss_{} = {}'.format(step,i,loss_value_current,i,attention_loss_value_current))
-        if step % args.save_pred_every == 0:
-            images = cur_imgs
-            labels = cur_labels
+        saver = tf.train.Saver(var_list=var_to_be_restored, max_to_keep=40)
+        if args.restore_from is not None:
+           load(saver, sess, args.restore_from)
 
-            #do predict
-            preds_result_value = sess.run([pred_result],feed_dict=
-            {image_batch_placeholder:cur_imgs,
-             attention_map_placeholder:next_attention_map
-             })
-            #single value
-            preds_result_value =preds_result_value[0]
 
-            fig, axes = plt.subplots(args.save_num_images, 3, figsize=(16, 12))
-            print("images type: {}".format(type(images)))
-            print("labels type: {}".format(type(labels)))
-            #print("preds_result_value type: {},shape {}".format(type(preds_result_value[0]),(preds_result_value[0]).get_shape()))
+        #define Summary
+        for var in tf.trainable_variables():
+            tf.summary.histogram(var.op.name + "/values", var)
 
-            #print("preds_result shape: {}".format(preds_result_value.get_shape()))
-            for i in xrange(args.save_num_images):
-                axes.flat[i * 3].set_title('data')
-                axes.flat[i * 3].imshow((images[i] + IMG_MEAN)[:, :, ::-1].astype(np.uint8))
+        with tf.name_scope("parameter_count"):
+            parameter_count = tf.reduce_sum([tf.reduce_prod(tf.shape(v)) for v in tf.trainable_variables()])
 
-                axes.flat[i * 3 + 1].set_title('mask')
-                axes.flat[i * 3 + 1].imshow(decode_labels(labels[i, :, :, 0]))
+        print("parameter_count =", sess.run(parameter_count))
 
-                axes.flat[i * 3 + 2].set_title('pred')
-                axes.flat[i * 3 + 2].imshow(decode_labels(preds_result_value[i, :, :, 0]))
-            plt.savefig(args.save_dir + str(start_time) + ".png")
-            plt.close(fig)
-            save(saver, sess, args.snapshot_dir, step)
+        # Start queue threads.
+        threads = tf.train.start_queue_runners(coord=coord, sess=sess)
+
+        if not os.path.exists(args.save_dir):
+            os.makedirs(args.save_dir)
+
+        # Iterate over training steps.
+        for step in range(1,args.num_steps):
+            start_time = time.time()
+
+            cur_imgs,cur_labels = sess.run([image_batch,label_batch])
+
+            #do Loop recurrent training
+            next_attention_map = np.zeros((args.batch_size,h,w,1), dtype=np.float32)
+            for i in xrange(args.recurrent_times):
+                loss_value_current,attention_loss_value_current,next_attention_map,predict_img_output, _ = sess.run([loss,attention_loss,attention_map,predict_img,optim],feed_dict=
+                {image_batch_placeholder:cur_imgs,
+                 label_batch_placeholder:cur_labels,
+                 attention_map_placeholder:next_attention_map
+                 })
+
+                if step % args.summary_freq == 0:
+                    recurrent_loss_summary = tf.Summary(value=[
+                        tf.Summary.Value(tag="recurrent_loss_{}".format(i), simple_value=loss_value_current),
+                    ])
+                    sv.summary_writer.add_summary(recurrent_loss_summary)
+
+                    attention_loss_summary = tf.Summary(value=[
+                        tf.Summary.Value(tag="attention_loss_{}".format(i), simple_value=attention_loss_value_current),
+                    ])
+                    sv.summary_writer.add_summary(attention_loss_summary)
+
+                    predict_summary = tf.summary.image("predict_image_{}".format(i),predict_img_output)
+                    sv.summary_writer.add_summary(predict_summary)
+
+
+
+                print('step {:d} \t loss_value_{} = {:.3f},attention_loss_{} = {}'.format(step,i,loss_value_current,i,attention_loss_value_current))
 
             if step % args.summary_freq == 0:
+                tf.summary.image("attention_map",next_attention_map)
+                # add other summary
+                tf.merge_all_summaries()
+
+            if step % args.save_pred_every == 0:
                 images = cur_imgs
                 labels = cur_labels
 
+                #do predict
+                preds_result_value = sess.run([pred_result],feed_dict=
+                {image_batch_placeholder:cur_imgs,
+                 attention_map_placeholder:next_attention_map
+                 })
+                #single value
+                preds_result_value =preds_result_value[0]
 
-        duration = time.time() - start_time
-        print('step {:d} \t  ({:.3f} sec/step)'.format(step, duration))
+                fig, axes = plt.subplots(args.save_num_images, 3, figsize=(16, 12))
+                print("images type: {}".format(type(images)))
+                print("labels type: {}".format(type(labels)))
+                #print("preds_result_value type: {},shape {}".format(type(preds_result_value[0]),(preds_result_value[0]).get_shape()))
+
+                #print("preds_result shape: {}".format(preds_result_value.get_shape()))
+                for i in xrange(args.save_num_images):
+                    axes.flat[i * 3].set_title('data')
+                    axes.flat[i * 3].imshow((images[i] + IMG_MEAN)[:, :, ::-1].astype(np.uint8))
+
+                    axes.flat[i * 3 + 1].set_title('mask')
+                    axes.flat[i * 3 + 1].imshow(decode_labels(labels[i, :, :, 0]))
+
+                    axes.flat[i * 3 + 2].set_title('pred')
+                    axes.flat[i * 3 + 2].imshow(decode_labels(preds_result_value[i, :, :, 0]))
+                plt.savefig(args.save_dir + str(start_time) + ".png")
+                plt.close(fig)
+                save(saver, sess, args.snapshot_dir, step)
 
 
 
-    coord.request_stop()
-    coord.join(threads)
+
+            duration = time.time() - start_time
+            print('step {:d} \t  ({:.3f} sec/step)'.format(step, duration))
+
+
+
+        coord.request_stop()
+        coord.join(threads)
     
 if __name__ == '__main__':
     main()
