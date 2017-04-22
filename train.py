@@ -159,10 +159,10 @@ def main():
 
     #summary
     with tf.name_scope("loss_summary"):
-        tf.summay.scalar("loss",loss)
-        tf.summay.scalar("loss_1", main_loss_1)
-        tf.summay.scalar("loss_2", main_loss_2)
-        tf.summay.scalar("loss_3", main_loss_3)
+        tf.summary.scalar("loss",loss)
+        tf.summary.scalar("loss_1", main_loss_1)
+        tf.summary.scalar("loss_2", main_loss_2)
+        tf.summary.scalar("loss_3", main_loss_3)
 
     with tf.name_scope("image_summary"):
         tf.summary.image("origin", convert(image_batch))
