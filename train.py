@@ -34,7 +34,7 @@ RANDOM_SCALE = True
 RESTORE_FROM = './deeplab_lfov.ckpt'
 SAVE_DIR = './images/'
 SAVE_NUM_IMAGES = 2
-SAVE_PRED_EVERY = 20
+SAVE_PRED_EVERY = 10
 SNAPSHOT_DIR = './snapshots/'
 WEIGHTS_PATH   = None
 
@@ -219,7 +219,6 @@ def main():
     for step in range(1,args.num_steps):
         start_time = time.time()
 
-        cur_imgs,cur_labels = sess.run([image_batch,label_batch])
 
         #do Loop recurrent training
         _loss,_main_loss_1, _pre_upscaled_1, _output_attention_map_1, _main_loss_2, _pre_upscaled_2,\
@@ -236,8 +235,9 @@ output_attention_map_2, main_loss_3, pre_upscaled_3, output_attention_map_3])
             summary_writer.add_summary(summary_str, step)
 
         if step % args.save_pred_every == 0:
-            images = cur_imgs
-            labels = cur_labels
+            print("save a predict as picture...")
+            images = image_batch
+            labels = label_batch
             #do predict
             preds_result_value = sess.run([pred_result])
             #single value
