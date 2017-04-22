@@ -144,6 +144,7 @@ def main():
     pred_result = net.preds(image_batch)
 
     def convert(image):
+        image = tf.image.grayscale_to_rgb(image)
         return tf.image.convert_image_dtype(image, dtype=tf.uint8, saturate=True)
 
     # reverse any processing on images so they can be written to disk or displayed to user
@@ -171,7 +172,7 @@ def main():
         tf.summary.image("predict_2", pre_upscaled_2_converted)
         tf.summary.image("predict_3", pre_upscaled_3_converted)
         tf.summary.image('total',
-                         tf.concat([convert(image_batch), tf.image.grayscale_to_rgb(label_batch), tf.image.grayscale_to_rgb(pre_upscaled_1),tf.image.grayscale_to_rgb(pre_upscaled_2),tf.image.grayscale_to_rgb(pre_upscaled_3)], 2),
+                         tf.concat([convert(image_batch), tf.image.grayscale_to_rgb(label_batch),pre_upscaled_1_converted,pre_upscaled_2_converted,pre_upscaled_3_converted ], 2),
                          max_outputs=4)
 
     merged_summary_op = tf.summary.merge_all()
