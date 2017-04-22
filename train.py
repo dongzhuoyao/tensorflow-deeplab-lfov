@@ -29,7 +29,7 @@ DATA_LIST_PATH = './dataset/train.txt'
 INPUT_SIZE = '321,321'
 LEARNING_RATE = 1e-4
 MEAN_IMG = tf.Variable(np.array((104.00698793,116.66876762,122.67891434)), trainable=False, dtype=tf.float32)
-NUM_STEPS = 20000
+NUM_STEPS = 20000000
 RANDOM_SCALE = True
 RESTORE_FROM = './deeplab_lfov.ckpt'
 SAVE_DIR = './images/'
@@ -138,7 +138,10 @@ def main():
 
     loss = main_loss_1+1*main_loss_2+1*main_loss_3
 
-    optimiser = tf.train.AdamOptimizer(learning_rate=args.learning_rate)
+    learning_rate = tf.placeholder(tf.float32, shape=[])
+    optimiser = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9)
+
+
     trainable = tf.trainable_variables()
     optim = optimiser.minimize(loss, var_list=trainable)
     pred_result = net.preds(image_batch)
@@ -218,9 +221,15 @@ def main():
     for step in range(1,args.num_steps):
         start_time = time.time()
 
+        # get learning rate
+        lr_scale = math.floor(step / 4000);
+        cur_lr = args.learning_rate / math.pow(2, lr_scale)
+        print("current learning rate: {}".format(cur_lr))
+
+
         _loss,_main_loss_1, _pre_upscaled_1, _output_attention_map_1, _main_loss_2, _pre_upscaled_2,\
 _output_attention_map_2, _main_loss_3, _pre_upscaled_3, _output_attention_map_3 = sess.run([loss,main_loss_1, pre_upscaled_1, output_attention_map_1, main_loss_2, pre_upscaled_2,\
-output_attention_map_2, main_loss_3, pre_upscaled_3, output_attention_map_3])
+output_attention_map_2, main_loss_3, pre_upscaled_3, output_attention_map_3],feed_dict={learning_rate:cur_lr})
 
 
         print('step {:d} \t total_loss: {:.3f}, loss 1: {:.3f}, loss 2: {:.3f}, loss 3: {:.3f}'.format(step,_loss,_main_loss_1,_main_loss_2,_main_loss_3))
