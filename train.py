@@ -179,10 +179,10 @@ def main():
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
     sess = tf.Session(config=config)
-
-
-    summary_writer = tf.summary.FileWriter(args.summay_dir,sess.graph)
     sess.run(tf.global_variables_initializer())
+
+    summary_writer = tf.summary.FileWriter(args.summay_dir, sess.graph)
+
 
 
     # check the shape
