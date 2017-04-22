@@ -33,8 +33,8 @@ NUM_STEPS = 20000
 RANDOM_SCALE = True
 RESTORE_FROM = './deeplab_lfov.ckpt'
 SAVE_DIR = './images/'
-SAVE_NUM_IMAGES = 2
-SAVE_PRED_EVERY = 10
+SAVE_NUM_IMAGES = 4
+SAVE_PRED_EVERY = 100
 SNAPSHOT_DIR = './snapshots/'
 WEIGHTS_PATH   = None
 
@@ -72,11 +72,8 @@ def get_arguments():
     parser.add_argument("--weights_path", type=str, default=WEIGHTS_PATH,
                         help="Path to the file with caffemodel weights. "
                              "If not set, all the variables are initialised randomly.")
-    parser.add_argument("--recurrent_times", type=int, default=3,
-                        help="recurrent_times"
-                             "recurrent_times")
 
-    parser.add_argument("--summary_freq", type=int, default=10,
+    parser.add_argument("--summary_freq", type=int, default=100,
                         help="summary_freq"
                              "summary_freq")
     parser.add_argument("--summay_dir", type=str, default="./summary",
@@ -111,6 +108,12 @@ def main():
     
     h, w = map(int, args.input_size.split(','))
     input_size = (h, w)
+
+    # Set up tf session and initialize variables.
+    config = tf.ConfigProto()
+    config.gpu_options.allow_growth = True
+    sess = tf.Session(config=config)
+    sess.run(tf.global_variables_initializer())
     
     # Create queue coordinator.
     coord = tf.train.Coordinator()
@@ -153,6 +156,8 @@ def main():
     with tf.name_scope("convert_outputs"):
         pre_upscaled_3_converted = convert(pre_upscaled_3)
 
+    for var in tf.trainable_variables():
+        tf.summary.histogram(var.op.name + "/values", var)
 
     #summary
     with tf.name_scope("loss_summary"):
@@ -173,11 +178,6 @@ def main():
 
     merged_summary_op = tf.summary.merge([total_summary, loss_summary,loss_1_summary,loss_2_summary,loss_3_summary])
 
-    # Set up tf session and initialize variables.
-    config = tf.ConfigProto()
-    config.gpu_options.allow_growth = True
-    sess = tf.Session(config=config)
-    sess.run(tf.global_variables_initializer())
 
     summary_writer = tf.summary.FileWriter(args.summay_dir, sess.graph)
 
@@ -218,8 +218,6 @@ def main():
     for step in range(1,args.num_steps):
         start_time = time.time()
 
-
-        #do Loop recurrent training
         _loss,_main_loss_1, _pre_upscaled_1, _output_attention_map_1, _main_loss_2, _pre_upscaled_2,\
 _output_attention_map_2, _main_loss_3, _pre_upscaled_3, _output_attention_map_3 = sess.run([loss,main_loss_1, pre_upscaled_1, output_attention_map_1, main_loss_2, pre_upscaled_2,\
 output_attention_map_2, main_loss_3, pre_upscaled_3, output_attention_map_3])
