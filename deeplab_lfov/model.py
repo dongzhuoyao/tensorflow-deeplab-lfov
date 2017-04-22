@@ -248,6 +248,9 @@ class DeepLabLFOVModel(object):
 
         att_3d = tf.cast(tf.not_equal(gt_upscaled, pre_upscaled), tf.float32)
         att_3d_inverse = tf.cast(tf.equal(gt_upscaled, pre_upscaled), tf.float32)
+        att_3d = tf.expand_dims(att_3d, dim=3)
+        att_3d_inverse = tf.expand_dims(att_3d_inverse, dim=3)
+
 
         output_attention_map = tf.add(tf.multiply(predict_3d_inverse,att_3d),tf.multiply(predict_3d,att_3d_inverse))
 

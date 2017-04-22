@@ -180,7 +180,7 @@ def main():
     config.gpu_options.allow_growth = True
     sess = tf.Session(config=config)
 
-    
+
     summary_writer = tf.summary.FileWriter(args.summay_dir,sess.graph)
     sess.run(tf.global_variables_initializer())
 
