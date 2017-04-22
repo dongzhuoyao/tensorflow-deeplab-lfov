@@ -1,1 +1,1 @@
-tensorboard --logdir ./summay --port 7777
+tensorboard --logdir ./summary --port 7777
