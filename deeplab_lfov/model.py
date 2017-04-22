@@ -269,7 +269,8 @@ class DeepLabLFOVModel(object):
           Pixel-wise softmax loss.
         """
         #init attention map
-        init_attention_map = tf.zeros(img_batch.get_shape()[0:4], tf.float32)
+        init_attention_map = tf.zeros(img_batch.get_shape()[0:3], tf.float32)
+        print("init_attention_map shape: {}".format(init_attention_map.get_shape()))
         main_loss_1, pre_upscaled_1, output_attention_map_1 = self.RAU(img_batch, label_batch,init_attention_map)
         main_loss_2, pre_upscaled_2, output_attention_map_2 = self.RAU(img_batch, label_batch, output_attention_map_1)
         main_loss_3, pre_upscaled_3, output_attention_map_3 = self.RAU(img_batch, label_batch, output_attention_map_2)
