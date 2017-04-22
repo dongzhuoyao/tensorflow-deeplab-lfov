@@ -173,7 +173,7 @@ def main():
                          tf.concat([convert(image_batch), tf.image.grayscale_to_rgb(label_batch),pre_upscaled_1_converted,pre_upscaled_2_converted,pre_upscaled_3_converted ], 2),
                          max_outputs=4)
 
-    merged_summary_op = tf.merge_summary([origin_summary,label_summary,total_summary, loss_summary,loss_1_summary,loss_2_summary,loss_3_summary])
+    merged_summary_op = tf.summary.merge([origin_summary,label_summary,total_summary, loss_summary,loss_1_summary,loss_2_summary,loss_3_summary])
 
     # Set up tf session and initialize variables.
     config = tf.ConfigProto()
