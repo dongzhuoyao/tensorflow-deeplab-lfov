@@ -244,7 +244,7 @@ output_attention_map_2, main_loss_3, pre_upscaled_3, output_attention_map_3])
             print("labels type: {}".format(type(labels)))
             #print("preds_result_value type: {},shape {}".format(type(preds_result_value[0]),(preds_result_value[0]).get_shape()))
 
-            print("preds_result shape: {}".format(preds_result_value.get_shape()))
+            print("preds_result shape: {}".format(preds_result_value.shape))
             for i in xrange(args.save_num_images):
                 axes.flat[i * 3].set_title('data')
                 axes.flat[i * 3].imshow((images[i] + IMG_MEAN)[:, :, ::-1].astype(np.uint8))
