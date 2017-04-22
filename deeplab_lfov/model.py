@@ -173,6 +173,12 @@ class DeepLabLFOVModel(object):
             input_batch = tf.squeeze(input_batch, squeeze_dims=[3]) # Reducing the channel dimension.
             input_batch = tf.one_hot(input_batch, depth=21)
         return input_batch
+
+    def _create_reusable_nework(self,img_batch):
+        with tf.variable_scope('resusable_network', reuse=True):
+            result = self._create_network(tf.cast(img_batch, tf.float32), keep_prob=tf.constant(0.5))
+        return result
+
       
     def preds(self, input_batch):
         """Create the network and run inference on the input batch.
@@ -206,7 +212,8 @@ class DeepLabLFOVModel(object):
         img_batch = tf.multiply(img_batch,pre_attention_map)
 
 
-        raw_output = self._create_network(tf.cast(img_batch, tf.float32), keep_prob=tf.constant(0.5))
+        #raw_output = self._create_network(tf.cast(img_batch, tf.float32), keep_prob=tf.constant(0.5))
+        raw_output = self._create_reusable_nework(img_batch)
 
         pre_upscaled = predict_4d = tf.image.resize_bilinear(raw_output, tf.shape(img_batch)[1:3, ])
         pre_upscaled = tf.argmax(pre_upscaled, dimension=3)
@@ -257,5 +264,10 @@ class DeepLabLFOVModel(object):
         """
         #init attention map
 
+        main_loss_1, pre_upscaled_1, output_attention_map_1 = self.RAU(img_batch, label_batch,init_attention_map)
+        main_loss_2, pre_upscaled_2, output_attention_map_2 = self.RAU(img_batch, label_batch, output_attention_map_1)
+        main_loss_3, pre_upscaled_3, output_attention_map_3 = self.RAU(img_batch, label_batch, output_attention_map_2)
 
-        return main_loss,attention_loss,attention_map,pre_upscaled
+
+        return main_loss_1, pre_upscaled_1, output_attention_map_1,main_loss_2, pre_upscaled_2, \
+               output_attention_map_2,main_loss_3, pre_upscaled_3, output_attention_map_3

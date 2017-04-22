@@ -128,18 +128,53 @@ def main():
     # Create network.
     net = DeepLabLFOVModel(args.weights_path)
 
-    image_batch_placeholder = tf.placeholder(tf.float32,shape=[args.batch_size,h,w,3])
-    label_batch_placeholder = tf.placeholder(tf.uint8,shape=[args.batch_size,h,w,1])
-    attention_map_placeholder = tf.placeholder(tf.float32,shape=[args.batch_size,h,w,1])
+    attention_map_placeholder = tf.placeholder(tf.float32, shape=[args.batch_size, h, w, 1])
 
     # Define the loss and optimisation parameters.
-    loss,attention_loss,attention_map,predict_img = net.loss(image_batch_placeholder, label_batch_placeholder,attention_map_placeholder)
+    main_loss_1, pre_upscaled_1, output_attention_map_1, main_loss_2, pre_upscaled_2,\
+    output_attention_map_2, main_loss_3, pre_upscaled_3, output_attention_map_3  = net.loss(image_batch, label_batch,attention_map_placeholder)
+
+    loss = main_loss_1+1*main_loss_2+1*main_loss_3
+
     optimiser = tf.train.AdamOptimizer(learning_rate=args.learning_rate)
     trainable = tf.trainable_variables()
     optim = optimiser.minimize(loss, var_list=trainable)
 
     tf.get_variable_scope().reuse_variables()
-    pred_result = net.preds(image_batch_placeholder,attention_map_placeholder)
+    pred_result = net.preds(image_batch,attention_map_placeholder)
+
+    def convert(image):
+        return tf.image.convert_image_dtype(image, dtype=tf.uint8, saturate=True)
+
+    # reverse any processing on images so they can be written to disk or displayed to user
+    with tf.name_scope("convert_inputs"):
+        pre_upscaled_1_converted = convert(pre_upscaled_1)
+
+    with tf.name_scope("convert_targets"):
+        pre_upscaled_2_converted = convert(pre_upscaled_2)
+
+    with tf.name_scope("convert_outputs"):
+        pre_upscaled_3_converted = convert(pre_upscaled_3)
+
+
+    #summary
+    with tf.name_scope("loss_summary"):
+        tf.summay.scalar("loss",loss)
+        tf.summay.scalar("loss_1", main_loss_1)
+        tf.summay.scalar("loss_2", main_loss_2)
+        tf.summay.scalar("loss_3", main_loss_3)
+
+    with tf.name_scope("image_summary"):
+        tf.summary.image("origin", convert(image_batch))
+        tf.summary.image("label", convert(label_batch))
+        tf.summary.image("predict_1", pre_upscaled_1_converted)
+        tf.summary.image("predict_2", pre_upscaled_2_converted)
+        tf.summary.image("predict_3", pre_upscaled_3_converted)
+        tf.summary.image('total',
+                         tf.concat([convert(image_batch), convert(label_batch), pre_upscaled_1_converted,pre_upscaled_2_converted,pre_upscaled_3_converted], 2),
+                         max_outputs=4)
+
+    merged_summary_op = tf.summary.merge_all()
 
     sv = tf.train.Supervisor(logdir=args.summay_dir, save_summaries_secs=0, saver=None)
     with sv.managed_session() as sess:
@@ -189,45 +224,31 @@ def main():
             cur_imgs,cur_labels = sess.run([image_batch,label_batch])
 
             #do Loop recurrent training
-            next_attention_map = np.zeros((args.batch_size,h,w,1), dtype=np.float32)
-            for i in xrange(args.recurrent_times):
-                loss_value_current,attention_loss_value_current,next_attention_map,predict_img_output, _ = sess.run([loss,attention_loss,attention_map,predict_img,optim],feed_dict=
-                {image_batch_placeholder:cur_imgs,
-                 label_batch_placeholder:cur_labels,
-                 attention_map_placeholder:next_attention_map
-                 })
+            init_attention_map = np.zeros((args.batch_size,h,w,1), dtype=np.float32)
 
-                if step % args.summary_freq == 0:
-                    recurrent_loss_summary = tf.Summary(value=[
-                        tf.Summary.Value(tag="recurrent_loss_{}".format(i), simple_value=loss_value_current),
-                    ])
-                    sv.summary_writer.add_summary(recurrent_loss_summary)
-
-                    attention_loss_summary = tf.Summary(value=[
-                        tf.Summary.Value(tag="attention_loss_{}".format(i), simple_value=attention_loss_value_current),
-                    ])
-                    sv.summary_writer.add_summary(attention_loss_summary)
-
-                    predict_summary = tf.summary.image("predict_image_{}".format(i),predict_img_output)
-                    sv.summary_writer.add_summary(predict_summary)
+            _loss,_main_loss_1, _pre_upscaled_1, _output_attention_map_1, _main_loss_2, _pre_upscaled_2,\
+    _output_attention_map_2, _main_loss_3, _pre_upscaled_3, _output_attention_map_3 = sess.run([loss,main_loss_1, pre_upscaled_1, output_attention_map_1, main_loss_2, pre_upscaled_2,\
+    output_attention_map_2, main_loss_3, pre_upscaled_3, output_attention_map_3], feed_dict=
+            {
+             attention_map_placeholder: init_attention_map
+             })
 
 
-
-                print('step {:d} \t loss_value_{} = {:.3f},attention_loss_{} = {}'.format(step,i,loss_value_current,i,attention_loss_value_current))
+            print('step {:d} \t total_loss: {:.3f}, loss 1: {:.3f}, loss 2: {:.3f}, loss 3: {:.3f}'.format(step,_loss,_main_loss_1,_main_loss_2,_main_loss_3))
 
             if step % args.summary_freq == 0:
-                tf.summary.image("attention_map",next_attention_map)
-                # add other summary
-                tf.merge_all_summaries()
+                print("write summay...")
+                # generate summary for tensorboard
+                summary_str = td.sess.run(merged_summary_op)
+                sv.summary_computed(sess, summary_str)
 
             if step % args.save_pred_every == 0:
                 images = cur_imgs
                 labels = cur_labels
-
                 #do predict
                 preds_result_value = sess.run([pred_result],feed_dict=
-                {image_batch_placeholder:cur_imgs,
-                 attention_map_placeholder:next_attention_map
+                {
+                 attention_map_placeholder:init_attention_map
                  })
                 #single value
                 preds_result_value =preds_result_value[0]
@@ -250,9 +271,6 @@ def main():
                 plt.savefig(args.save_dir + str(start_time) + ".png")
                 plt.close(fig)
                 save(saver, sess, args.snapshot_dir, step)
-
-
-
 
             duration = time.time() - start_time
             print('step {:d} \t  ({:.3f} sec/step)'.format(step, duration))
