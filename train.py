@@ -168,7 +168,7 @@ def main():
         tf.summary.image("predict_2", pre_upscaled_2_converted)
         tf.summary.image("predict_3", pre_upscaled_3_converted)
         total_summary = tf.summary.image('total',
-                         tf.concat([convert(image_batch), tf.image.grayscale_to_rgb(label_batch),pre_upscaled_1_converted,pre_upscaled_2_converted,pre_upscaled_3_converted ], 2),
+                         tf.concat([convert(image_batch), tf.image.grayscale_to_rgb(label_batch), tf.image.grayscale_to_rgb(pre_upscaled_1_converted), tf.image.grayscale_to_rgb(pre_upscaled_2_converted), tf.image.grayscale_to_rgb(pre_upscaled_3_converted) ], 2),
                          max_outputs=4)
 
     merged_summary_op = tf.summary.merge([total_summary, loss_summary,loss_1_summary,loss_2_summary,loss_3_summary])
