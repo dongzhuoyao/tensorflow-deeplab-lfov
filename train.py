@@ -235,10 +235,8 @@ output_attention_map_2, main_loss_3, pre_upscaled_3, output_attention_map_3])
 
         if step % args.save_pred_every == 0:
             print("save a predict as picture...")
-            images = image_batch
-            labels = label_batch
             #do predict
-            preds_result_value = sess.run([pred_result])
+            preds_result_value,images,labels = sess.run([pred_result,image_batch,label_batch])
             #single value
             preds_result_value =preds_result_value[0]
 
