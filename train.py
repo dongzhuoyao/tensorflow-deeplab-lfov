@@ -158,22 +158,22 @@ def main():
 
     #summary
     with tf.name_scope("loss_summary"):
-        tf.summary.scalar("loss",loss)
-        tf.summary.scalar("loss_1", main_loss_1)
-        tf.summary.scalar("loss_2", main_loss_2)
-        tf.summary.scalar("loss_3", main_loss_3)
+        loss_summary = tf.summary.scalar("loss",loss)
+        loss_1_summary = tf.summary.scalar("loss_1", main_loss_1)
+        loss_2_summary = tf.summary.scalar("loss_2", main_loss_2)
+        loss_3_summary = tf.summary.scalar("loss_3", main_loss_3)
 
     with tf.name_scope("image_summary"):
-        tf.summary.image("origin", convert(image_batch))
-        tf.summary.image("label", convert(label_batch))
+        origin_summary = tf.summary.image("origin", convert(image_batch))
+        label_summary = tf.summary.image("label", convert(label_batch))
         tf.summary.image("predict_1", pre_upscaled_1_converted)
         tf.summary.image("predict_2", pre_upscaled_2_converted)
         tf.summary.image("predict_3", pre_upscaled_3_converted)
-        tf.summary.image('total',
+        total_summary = tf.summary.image('total',
                          tf.concat([convert(image_batch), tf.image.grayscale_to_rgb(label_batch),pre_upscaled_1_converted,pre_upscaled_2_converted,pre_upscaled_3_converted ], 2),
                          max_outputs=4)
 
-    merged_summary_op = tf.summary.merge_all()
+    merged_summary_op = tf.merge_summary([origin_summary,label_summary,total_summary, loss_summary,loss_1_summary,loss_2_summary,loss_3_summary])
 
     # Set up tf session and initialize variables.
     config = tf.ConfigProto()
