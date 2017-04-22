@@ -1,0 +1,1 @@
+tensorboard --logdir ./summay --port 7777
