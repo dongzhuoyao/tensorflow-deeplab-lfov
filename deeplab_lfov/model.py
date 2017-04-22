@@ -207,7 +207,10 @@ class DeepLabLFOVModel(object):
         #restore to original shape
         pre_attention_map = tf.reshape(pre_attention_map,label_batch.get_shape()[0:3])
         print("pre_attention_map shape: {}".format(pre_attention_map.get_shape()))
-        pre_attention_map = tf.concat([pre_attention_map,pre_attention_map,pre_attention_map])
+        pre_attention_map = tf.expand_dims(pre_attention_map,axis=3)
+        print("pre_attention_map afater expand_dims shape: {}".format(pre_attention_map.get_shape()))
+        pre_attention_map = tf.concat([pre_attention_map,pre_attention_map,pre_attention_map],axis=-1)
+        print("pre_attention_map afater concat shape: {}".format(pre_attention_map.get_shape()))
         #apply attention map
         img_batch = tf.multiply(img_batch,pre_attention_map)
 
