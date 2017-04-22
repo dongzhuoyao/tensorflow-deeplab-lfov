@@ -141,7 +141,7 @@ def main():
     optim = optimiser.minimize(loss, var_list=trainable)
 
     tf.get_variable_scope().reuse_variables()
-    pred_result = net.preds(image_batch,attention_map_placeholder)
+    pred_result = net.preds(image_batch)
 
     def convert(image):
         return tf.image.convert_image_dtype(image, dtype=tf.uint8, saturate=True)
@@ -239,17 +239,14 @@ def main():
             if step % args.summary_freq == 0:
                 print("write summay...")
                 # generate summary for tensorboard
-                summary_str = td.sess.run(merged_summary_op)
+                summary_str = sess.run(merged_summary_op)
                 sv.summary_computed(sess, summary_str)
 
             if step % args.save_pred_every == 0:
                 images = cur_imgs
                 labels = cur_labels
                 #do predict
-                preds_result_value = sess.run([pred_result],feed_dict=
-                {
-                 attention_map_placeholder:init_attention_map
-                 })
+                preds_result_value = sess.run([pred_result])
                 #single value
                 preds_result_value =preds_result_value[0]
 
