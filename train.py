@@ -141,7 +141,6 @@ def main():
     pred_result = net.preds(image_batch)
 
     def convert(image):
-        image = tf.image.grayscale_to_rgb(image)
         return tf.image.convert_image_dtype(image, dtype=tf.uint8, saturate=True)
 
     # reverse any processing on images so they can be written to disk or displayed to user
