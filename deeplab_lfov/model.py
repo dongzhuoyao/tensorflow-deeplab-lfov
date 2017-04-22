@@ -205,7 +205,7 @@ class DeepLabLFOVModel(object):
         #add exponential operation
         pre_attention_map = tf.exp(pre_attention_map)
         #restore to original shape
-        pre_attention_map = tf.reshape(pre_attention_map,label_batch.get_shape()[1:3])
+        pre_attention_map = tf.reshape(pre_attention_map,label_batch.get_shape()[0:3])
         print("pre_attention_map shape: {}".format(pre_attention_map.get_shape()))
 
         #apply attention map
