@@ -259,7 +259,7 @@ class DeepLabLFOVModel(object):
         return main_loss,pre_upscaled,output_attention_map
 
     
-    def loss(self, img_batch, label_batch,init_attention_map):
+    def loss(self, img_batch, label_batch):
         """Create the network, run inference on the input batch and compute loss.
         
         Args:
@@ -269,7 +269,7 @@ class DeepLabLFOVModel(object):
           Pixel-wise softmax loss.
         """
         #init attention map
-
+        init_attention_map = tf.zeros(img_batch.get_shape()[0:4], tf.float32)
         main_loss_1, pre_upscaled_1, output_attention_map_1 = self.RAU(img_batch, label_batch,init_attention_map)
         main_loss_2, pre_upscaled_2, output_attention_map_2 = self.RAU(img_batch, label_batch, output_attention_map_1)
         main_loss_3, pre_upscaled_3, output_attention_map_3 = self.RAU(img_batch, label_batch, output_attention_map_2)

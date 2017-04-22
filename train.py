@@ -76,7 +76,7 @@ def get_arguments():
                         help="recurrent_times"
                              "recurrent_times")
 
-    parser.add_argument("--summary_freq", type=int, default=100,
+    parser.add_argument("--summary_freq", type=int, default=10,
                         help="summary_freq"
                              "summary_freq")
     parser.add_argument("--summay_dir", type=str, default="./summary",
@@ -128,11 +128,10 @@ def main():
     # Create network.
     net = DeepLabLFOVModel(args.weights_path)
 
-    attention_map_placeholder = tf.placeholder(tf.float32, shape=[args.batch_size, h, w, 1])
 
     # Define the loss and optimisation parameters.
     main_loss_1, pre_upscaled_1, output_attention_map_1, main_loss_2, pre_upscaled_2,\
-    output_attention_map_2, main_loss_3, pre_upscaled_3, output_attention_map_3  = net.loss(image_batch, label_batch,attention_map_placeholder)
+    output_attention_map_2, main_loss_3, pre_upscaled_3, output_attention_map_3  = net.loss(image_batch, label_batch)
 
     loss = main_loss_1+1*main_loss_2+1*main_loss_3
 
@@ -223,14 +222,9 @@ def main():
         cur_imgs,cur_labels = sess.run([image_batch,label_batch])
 
         #do Loop recurrent training
-        init_attention_map = np.zeros((args.batch_size,h,w,1), dtype=np.float32)
-
         _loss,_main_loss_1, _pre_upscaled_1, _output_attention_map_1, _main_loss_2, _pre_upscaled_2,\
 _output_attention_map_2, _main_loss_3, _pre_upscaled_3, _output_attention_map_3 = sess.run([loss,main_loss_1, pre_upscaled_1, output_attention_map_1, main_loss_2, pre_upscaled_2,\
-output_attention_map_2, main_loss_3, pre_upscaled_3, output_attention_map_3], feed_dict=
-        {
-         attention_map_placeholder: init_attention_map
-         })
+output_attention_map_2, main_loss_3, pre_upscaled_3, output_attention_map_3])
 
 
         print('step {:d} \t total_loss: {:.3f}, loss 1: {:.3f}, loss 2: {:.3f}, loss 3: {:.3f}'.format(step,_loss,_main_loss_1,_main_loss_2,_main_loss_3))
