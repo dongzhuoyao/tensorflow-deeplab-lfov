@@ -36,8 +36,8 @@ RESTORE_FROM = './deeplab_lfov.ckpt'
 SAVE_DIR = './images/'
 SAVE_NUM_IMAGES = 4
 
-SAVE_PRED_EVERY = 10
-SUMMARY_FREQ = 10
+SAVE_PRED_EVERY = 100
+SUMMARY_FREQ = 100
 
 
 SNAPSHOT_DIR = './snapshots/'
