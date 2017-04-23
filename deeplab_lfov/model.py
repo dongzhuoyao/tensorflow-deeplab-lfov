@@ -244,6 +244,7 @@ class DeepLabLFOVModel(object):
 
         #calculate attention map for next recurrent use
         predict_3d =tf.reduce_max(predict_4d,keep_dims=True,axis=3)
+        predict_3d = tf.nn.softmax(predict_3d)
         predict_3d_inverse = tf.subtract(tf.constant(1.0),predict_3d)
 
         att_3d = tf.cast(tf.not_equal(gt_upscaled, pre_upscaled_4d), tf.float32)
@@ -254,7 +255,7 @@ class DeepLabLFOVModel(object):
 
         print "attention_map size: {}".format(output_attention_map.get_shape())
 
-        #pre_upscaled_unit8 = tf.cast(pre_upscaled,tf.uint8)
+
         return main_loss,pre_upscaled_4d,output_attention_map,predict_3d
 
     
