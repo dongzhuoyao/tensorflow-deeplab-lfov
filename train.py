@@ -134,8 +134,8 @@ def main():
 
 
     # Define the loss and optimisation parameters.
-    main_loss_1, pre_upscaled_1, output_attention_map_1, main_loss_2, pre_upscaled_2,\
-    output_attention_map_2, main_loss_3, pre_upscaled_3, output_attention_map_3  = net.loss(image_batch, label_batch)
+    main_loss_1, pre_upscaled_1, output_attention_map_1,predict_3d_1, main_loss_2, pre_upscaled_2,\
+    output_attention_map_2,predict_3d_2, main_loss_3, pre_upscaled_3, output_attention_map_3 ,predict_3d_3 = net.loss(image_batch, label_batch)
 
     loss = main_loss_1+1*main_loss_2+1*main_loss_3
 
@@ -166,6 +166,10 @@ def main():
     att_2_summary = tf.py_func(show_attention_map, [output_attention_map_2, SAVE_NUM_IMAGES], tf.uint8)
     att_3_summary = tf.py_func(show_attention_map, [output_attention_map_3, SAVE_NUM_IMAGES], tf.uint8)
 
+    predict_3d_1_summary = tf.py_func(show_attention_map, [predict_3d_1, SAVE_NUM_IMAGES], tf.uint8)
+    predict_3d_2_summary = tf.py_func(show_attention_map, [predict_3d_2, SAVE_NUM_IMAGES], tf.uint8)
+    predict_3d_3_summary = tf.py_func(show_attention_map, [predict_3d_3, SAVE_NUM_IMAGES], tf.uint8)
+
     #summary
     with tf.name_scope("loss_summary"):
         loss_summary = tf.summary.scalar("loss",loss)
@@ -179,11 +183,15 @@ def main():
         tf.summary.image("predict_1", preds_1_summary)
         tf.summary.image("predict_2", preds_2_summary)
         tf.summary.image("predict_3", preds_3_summary)
-        total_summary = tf.summary.image('total',
+        total_summary = tf.summary.image('total_image',
                          tf.concat([images_summary, labels_summary, preds_1_summary,att_1_summary,preds_2_summary,att_2_summary,preds_3_summary,att_3_summary ], 2),
                          max_outputs=SAVE_NUM_IMAGES)
 
-    merged_summary_op = tf.summary.merge([total_summary, loss_summary,loss_1_summary,loss_2_summary,loss_3_summary])
+        credit_summary = tf.summary.image('credit_image',
+                                         tf.concat([images_summary, labels_summary,predict_3d_1_summary,predict_3d_2_summary,predict_3d_3_summary], 2),
+                                         max_outputs=SAVE_NUM_IMAGES)
+
+    merged_summary_op = tf.summary.merge([total_summary,credit_summary, loss_summary,loss_1_summary,loss_2_summary,loss_3_summary])
 
 
     summary_writer = tf.summary.FileWriter(args.summay_dir, sess.graph)

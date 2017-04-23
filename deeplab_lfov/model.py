@@ -218,10 +218,10 @@ class DeepLabLFOVModel(object):
         #raw_output = self._create_network(tf.cast(img_batch, tf.float32), keep_prob=tf.constant(0.5))
         raw_output = self._create_reusable_nework(img_batch)
 
-        pre_upscaled = predict_4d = tf.image.resize_bilinear(raw_output, tf.shape(img_batch)[1:3, ])
-        pre_upscaled = tf.argmax(pre_upscaled, dimension=3)
-        pre_upscaled = tf.expand_dims(pre_upscaled, dim=3)  # from 3-D to 4-D
-        pre_upscaled = tf.cast(pre_upscaled,tf.uint8)
+        pre_upscaled_4d = predict_4d = tf.image.resize_bilinear(raw_output, tf.shape(img_batch)[1:3, ])
+        pre_upscaled_4d = tf.argmax(pre_upscaled_4d, dimension=3)
+        pre_upscaled_4d = tf.expand_dims(pre_upscaled_4d, dim=3)  # from 3-D to 4-D
+        pre_upscaled_4d = tf.cast(pre_upscaled_4d,tf.uint8)
 
         print "predict before reshape: {}".format(raw_output.get_shape())
         # turn a matrix into a vector!!!
@@ -248,8 +248,8 @@ class DeepLabLFOVModel(object):
         predict_3d = tf.expand_dims(predict_3d, dim=3)
         predict_3d_inverse = tf.expand_dims(predict_3d_inverse, dim=3)
 
-        att_3d = tf.cast(tf.not_equal(gt_upscaled, pre_upscaled), tf.float32)
-        att_3d_inverse = tf.cast(tf.equal(gt_upscaled, pre_upscaled), tf.float32)
+        att_3d = tf.cast(tf.not_equal(gt_upscaled, pre_upscaled_4d), tf.float32)
+        att_3d_inverse = tf.cast(tf.equal(gt_upscaled, pre_upscaled_4d), tf.float32)
 
 
         output_attention_map = tf.add(tf.multiply(predict_3d,att_3d),tf.multiply(predict_3d_inverse,att_3d_inverse))
@@ -257,7 +257,7 @@ class DeepLabLFOVModel(object):
         print "attention_map size: {}".format(output_attention_map.get_shape())
 
         #pre_upscaled_unit8 = tf.cast(pre_upscaled,tf.uint8)
-        return main_loss,pre_upscaled,output_attention_map
+        return main_loss,pre_upscaled_4d,output_attention_map,predict_3d
 
     
     def loss(self, img_batch, label_batch):
@@ -272,10 +272,10 @@ class DeepLabLFOVModel(object):
         #init attention map
         init_attention_map = tf.zeros(img_batch.get_shape()[0:3], tf.float32)
         print("init_attention_map shape: {}".format(init_attention_map.get_shape()))
-        main_loss_1, pre_upscaled_1, output_attention_map_1 = self.RAU(img_batch, label_batch,init_attention_map)
-        main_loss_2, pre_upscaled_2, output_attention_map_2 = self.RAU(img_batch, label_batch, output_attention_map_1)
-        main_loss_3, pre_upscaled_3, output_attention_map_3 = self.RAU(img_batch, label_batch, output_attention_map_2)
+        main_loss_1, pre_upscaled_1, output_attention_map_1,predict_3d_1 = self.RAU(img_batch, label_batch,init_attention_map)
+        main_loss_2, pre_upscaled_2, output_attention_map_2,predict_3d_2 = self.RAU(img_batch, label_batch, output_attention_map_1)
+        main_loss_3, pre_upscaled_3, output_attention_map_3 ,predict_3d_3= self.RAU(img_batch, label_batch, output_attention_map_2)
 
 
-        return main_loss_1, pre_upscaled_1, output_attention_map_1,main_loss_2, pre_upscaled_2, \
-               output_attention_map_2,main_loss_3, pre_upscaled_3, output_attention_map_3
+        return main_loss_1, pre_upscaled_1, output_attention_map_1,predict_3d_1,main_loss_2, pre_upscaled_2, \
+               output_attention_map_2,predict_3d_2,main_loss_3, pre_upscaled_3, output_attention_map_3,predict_3d_3
