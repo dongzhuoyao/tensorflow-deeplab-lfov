@@ -116,7 +116,7 @@ def show_attention_map(imgs, num_images):
     n, num_images)
     outputs = np.zeros((num_images, h, w, 3), dtype=np.uint8)
     for i in range(num_images):
-        outputs[i, :,  :,0] = (255*imgs[i])[:, :, ::-1].astype(np.uint8)
-        outputs[i, :, :, 1] = (255 * imgs[i])[:, :, ::-1].astype(np.uint8)
-        outputs[i, :, :, 2] = (255 * imgs[i])[:, :, ::-1].astype(np.uint8)
+        outputs[i, :,  :,0] = (255*imgs[i])[:, :, ::-1].astype(np.uint8).reshape((h,w))
+        outputs[i, :, :, 1] = (255 * imgs[i])[:, :, ::-1].astype(np.uint8).reshape((h,w))
+        outputs[i, :, :, 2] = (255 * imgs[i])[:, :, ::-1].astype(np.uint8).reshape((h,w))
     return outputs
