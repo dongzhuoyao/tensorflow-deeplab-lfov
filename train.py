@@ -22,7 +22,7 @@ import tensorflow as tf
 import numpy as np
 
 from deeplab_lfov import DeepLabLFOVModel, ImageReader, decode_labels
-from deeplab_lfov.utils_from_resnet import decode_labels_by_batch,inv_preprocess
+from deeplab_lfov.utils_from_resnet import decode_labels_by_batch,inv_preprocess,show_attention_map
 
 BATCH_SIZE = 16
 DATA_DIRECTORY = '/home/VOCdevkit'
@@ -162,6 +162,9 @@ def main():
     preds_2_summary = tf.py_func(decode_labels_by_batch, [pre_upscaled_2, SAVE_NUM_IMAGES], tf.uint8)
     preds_3_summary = tf.py_func(decode_labels_by_batch, [pre_upscaled_3, SAVE_NUM_IMAGES], tf.uint8)
 
+    att_1_summary = tf.py_func(show_attention_map, [output_attention_map_1, SAVE_NUM_IMAGES], tf.uint8)
+    att_2_summary = tf.py_func(show_attention_map, [output_attention_map_2, SAVE_NUM_IMAGES], tf.uint8)
+    att_3_summary = tf.py_func(show_attention_map, [output_attention_map_3, SAVE_NUM_IMAGES], tf.uint8)
 
     #summary
     with tf.name_scope("loss_summary"):
@@ -177,7 +180,7 @@ def main():
         tf.summary.image("predict_2", preds_2_summary)
         tf.summary.image("predict_3", preds_3_summary)
         total_summary = tf.summary.image('total',
-                         tf.concat([images_summary, labels_summary, preds_1_summary,preds_2_summary,preds_3_summary ], 2),
+                         tf.concat([images_summary, labels_summary, preds_1_summary,att_1_summary,preds_2_summary,att_2_summary,preds_3_summary,att_3_summary ], 2),
                          max_outputs=SAVE_NUM_IMAGES)
 
     merged_summary_op = tf.summary.merge([total_summary, loss_summary,loss_1_summary,loss_2_summary,loss_3_summary])
