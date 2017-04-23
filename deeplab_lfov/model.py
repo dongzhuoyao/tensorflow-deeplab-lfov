@@ -243,8 +243,8 @@ class DeepLabLFOVModel(object):
         gt_upscaled = tf.cast(gt_upscaled, tf.uint8)
 
         #calculate attention map for next recurrent use
+        predict_4d = tf.nn.softmax(predict_4d)
         predict_3d =tf.reduce_max(predict_4d,keep_dims=True,axis=3)
-        predict_3d = tf.nn.softmax(predict_3d)
         predict_3d_inverse = tf.subtract(tf.constant(1.0),predict_3d)
 
         att_3d = tf.cast(tf.not_equal(gt_upscaled, pre_upscaled_4d), tf.float32)
