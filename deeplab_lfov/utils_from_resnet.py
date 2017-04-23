@@ -119,7 +119,7 @@ def attention_map_process(imgs, num_images):
         tmp = (imgs[i])[:, :, ::-1].flatten()
         bins = np.array([0.0, 0.95, 1.0])
         tmp = np.digitize(tmp, bins)
-        tmp *= 255.0 / tmp.max()
+        tmp = np.multiply(tmp,255.0 / tmp.max())
         tmp = tmp.reshape((h,w)).astype(np.uint8)
 
         outputs[i, :, :, 0] = tmp

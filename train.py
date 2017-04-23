@@ -35,7 +35,11 @@ RANDOM_SCALE = True
 RESTORE_FROM = './deeplab_lfov.ckpt'
 SAVE_DIR = './images/'
 SAVE_NUM_IMAGES = 4
-SAVE_PRED_EVERY = 100
+
+SAVE_PRED_EVERY = 10
+SUMMARY_FREQ = 10
+
+
 SNAPSHOT_DIR = './snapshots/'
 WEIGHTS_PATH   = None
 
@@ -74,7 +78,7 @@ def get_arguments():
                         help="Path to the file with caffemodel weights. "
                              "If not set, all the variables are initialised randomly.")
 
-    parser.add_argument("--summary_freq", type=int, default=100,
+    parser.add_argument("--summary_freq", type=int, default=SUMMARY_FREQ,
                         help="summary_freq"
                              "summary_freq")
     parser.add_argument("--summay_dir", type=str, default="./summary",
