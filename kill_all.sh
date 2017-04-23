@@ -1,1 +1,2 @@
-ps -ef|grep LOCAL=tensorboard|grep -v grep|cut -c 9-15|xargs kill -9
+ps -ef|grep tensorboard|grep -v grep|cut -c 9-15|xargs kill -9
+
