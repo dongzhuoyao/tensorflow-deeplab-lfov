@@ -221,7 +221,7 @@ class DeepLabLFOVModel(object):
         pre_upscaled = predict_4d = tf.image.resize_bilinear(raw_output, tf.shape(img_batch)[1:3, ])
         pre_upscaled = tf.argmax(pre_upscaled, dimension=3)
         pre_upscaled = tf.expand_dims(pre_upscaled, dim=3)  # from 3-D to 4-D
-
+        pre_upscaled = tf.cast(pre_upscaled,tf.uint8)
 
         print "predict before reshape: {}".format(raw_output.get_shape())
         # turn a matrix into a vector!!!
@@ -240,7 +240,7 @@ class DeepLabLFOVModel(object):
         gt_upscaled = tf.image.resize_bilinear(label_batch, tf.shape(img_batch)[1:3, ])
         gt_upscaled = tf.argmax(gt_upscaled, dimension=3)
         gt_upscaled = tf.expand_dims(gt_upscaled, dim=3)  # from 3-D to 4-D
-
+        gt_upscaled = tf.cast(gt_upscaled, tf.uint8)
 
         #calculate attention map for next recurrent use
         predict_3d =tf.reduce_max(predict_4d,axis=-1)
@@ -252,7 +252,7 @@ class DeepLabLFOVModel(object):
         att_3d_inverse = tf.cast(tf.equal(gt_upscaled, pre_upscaled), tf.float32)
 
 
-        output_attention_map = tf.add(tf.multiply(predict_3d_inverse,att_3d),tf.multiply(predict_3d,att_3d_inverse))
+        output_attention_map = tf.add(tf.multiply(predict_3d,att_3d),tf.multiply(predict_3d_inverse,att_3d_inverse))
 
         print "attention_map size: {}".format(output_attention_map.get_shape())
 
