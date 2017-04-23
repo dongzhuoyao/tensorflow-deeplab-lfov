@@ -100,7 +100,7 @@ def inv_preprocess(imgs, num_images):
     return outputs
 
 
-def attention_map_process(imgs, num_images):
+def single_channel_process(imgs, num_images):
     """Inverse preprocessing of the batch of images.
        Add the mean vector and convert from BGR to RGB.
 
@@ -128,7 +128,7 @@ def attention_map_process(imgs, num_images):
     return outputs
 
 
-def single_channel_process(imgs, num_images):
+def attention_map_process(imgs, num_images):
     """Inverse preprocessing of the batch of images.
        Add the mean vector and convert from BGR to RGB.
 
