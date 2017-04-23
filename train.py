@@ -171,8 +171,8 @@ def main():
         loss_3_summary = tf.summary.scalar("loss_3", main_loss_3)
 
     with tf.name_scope("image_summary"):
-        origin_summary = tf.summary.image("origin", convert(image_batch))
-        label_summary = tf.summary.image("label", convert(label_batch))
+        #origin_summary = tf.summary.image("origin", images_summary)
+        #label_summary = tf.summary.image("label", labels_summary)
         tf.summary.image("predict_1", preds_1_summary)
         tf.summary.image("predict_2", preds_2_summary)
         tf.summary.image("predict_3", preds_3_summary)
@@ -180,7 +180,7 @@ def main():
                          tf.concat([images_summary, labels_summary, preds_1_summary,preds_2_summary,preds_3_summary ], 2),
                          max_outputs=SAVE_NUM_IMAGES)
 
-    merged_summary_op = tf.summary.merge([origin_summary,label_summary,total_summary, loss_summary,loss_1_summary,loss_2_summary,loss_3_summary])
+    merged_summary_op = tf.summary.merge([total_summary, loss_summary,loss_1_summary,loss_2_summary,loss_3_summary])
 
 
     summary_writer = tf.summary.FileWriter(args.summay_dir, sess.graph)
