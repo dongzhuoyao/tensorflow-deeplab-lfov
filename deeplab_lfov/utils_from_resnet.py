@@ -124,9 +124,9 @@ def single_channel_process(imgs, num_images):
         #tmp = tmp*255.0/tmp.max()
         #tmp = tmp.reshape((h,w)).astype(np.uint8)
 
-        outputs[i, :, :, 0] = tmp.max()*np.ones(h,w)
-        outputs[i, :, :, 1] = tmp.max()*np.ones(h,w)
-        outputs[i, :, :, 2] = tmp.max()*np.ones(h,w)
+        outputs[i, :, :, 0] = tmp.max()*np.ones((h,w))
+        outputs[i, :, :, 1] = tmp.max()*np.ones((h,w))
+        outputs[i, :, :, 2] = tmp.max()*np.ones((h,w))
     return outputs
 
 
