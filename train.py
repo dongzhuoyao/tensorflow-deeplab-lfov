@@ -22,7 +22,7 @@ import tensorflow as tf
 import numpy as np
 
 from deeplab_lfov import DeepLabLFOVModel, ImageReader, decode_labels
-from deeplab_lfov.utils_from_resnet import decode_labels_by_batch,inv_preprocess,show_attention_map
+from deeplab_lfov.utils_from_resnet import decode_labels_by_batch,inv_preprocess,single_channel_process,attention_map_process
 
 BATCH_SIZE = 16
 DATA_DIRECTORY = '/home/VOCdevkit'
@@ -162,13 +162,13 @@ def main():
     preds_2_summary = tf.py_func(decode_labels_by_batch, [pre_upscaled_2, SAVE_NUM_IMAGES], tf.uint8)
     preds_3_summary = tf.py_func(decode_labels_by_batch, [pre_upscaled_3, SAVE_NUM_IMAGES], tf.uint8)
 
-    att_1_summary = tf.py_func(show_attention_map, [output_attention_map_1, SAVE_NUM_IMAGES], tf.uint8)
-    att_2_summary = tf.py_func(show_attention_map, [output_attention_map_2, SAVE_NUM_IMAGES], tf.uint8)
-    att_3_summary = tf.py_func(show_attention_map, [output_attention_map_3, SAVE_NUM_IMAGES], tf.uint8)
+    att_1_summary = tf.py_func(attention_map_process, [output_attention_map_1, SAVE_NUM_IMAGES], tf.uint8)
+    att_2_summary = tf.py_func(attention_map_process, [output_attention_map_2, SAVE_NUM_IMAGES], tf.uint8)
+    att_3_summary = tf.py_func(attention_map_process, [output_attention_map_3, SAVE_NUM_IMAGES], tf.uint8)
 
-    predict_3d_1_summary = tf.py_func(show_attention_map, [predict_3d_1, SAVE_NUM_IMAGES], tf.uint8)
-    predict_3d_2_summary = tf.py_func(show_attention_map, [predict_3d_2, SAVE_NUM_IMAGES], tf.uint8)
-    predict_3d_3_summary = tf.py_func(show_attention_map, [predict_3d_3, SAVE_NUM_IMAGES], tf.uint8)
+    predict_3d_1_summary = tf.py_func(single_channel_process, [predict_3d_1, SAVE_NUM_IMAGES], tf.uint8)
+    predict_3d_2_summary = tf.py_func(single_channel_process, [predict_3d_2, SAVE_NUM_IMAGES], tf.uint8)
+    predict_3d_3_summary = tf.py_func(single_channel_process, [predict_3d_3, SAVE_NUM_IMAGES], tf.uint8)
 
     #summary
     with tf.name_scope("loss_summary"):
