@@ -31,7 +31,7 @@ raw_label_colours = [(0, 0, 0)
 IMG_MEAN = np.array((104.00698793, 116.66876762, 122.67891434), dtype=np.float32)
 
 
-def decode_labels(mask, num_images=1, raw_label_output=False):
+def decode_labels_by_batch(mask, num_images=1, raw_label_output=False):
     """Decode batch of segmentation masks.
 
     Args:
