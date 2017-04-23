@@ -141,7 +141,7 @@ def main():
     main_loss_1, pre_upscaled_1, output_attention_map_1,predict_3d_1, main_loss_2, pre_upscaled_2,\
     output_attention_map_2,predict_3d_2, main_loss_3, pre_upscaled_3, output_attention_map_3 ,predict_3d_3 = net.loss(image_batch, label_batch)
 
-    loss = main_loss_1+1*main_loss_2+1*main_loss_3
+    loss = (main_loss_1+0.8*main_loss_2+0.64*main_loss_3)*100
 
     learning_rate = tf.placeholder(tf.float32, shape=[])
     optimiser = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9)
