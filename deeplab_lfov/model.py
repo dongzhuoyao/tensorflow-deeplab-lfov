@@ -256,7 +256,8 @@ class DeepLabLFOVModel(object):
 
         print "attention_map size: {}".format(output_attention_map.get_shape())
 
-        return main_loss,pre_upscaled,output_attention_map
+        pre_upscaled_unit8 = tf.cast(pre_upscaled,tf.uint8)
+        return main_loss,pre_upscaled_unit8,output_attention_map
 
     
     def loss(self, img_batch, label_batch):
