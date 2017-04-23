@@ -272,7 +272,7 @@ class DeepLabLFOVModel(object):
         print("init_attention_map shape: {}".format(init_attention_map.get_shape()))
         main_loss_1, pre_upscaled_1, output_attention_map_1,predict_3d_1 = self.RAU(img_batch, label_batch,init_attention_map)
         main_loss_2, pre_upscaled_2, output_attention_map_2,predict_3d_2 = self.RAU(img_batch, label_batch, output_attention_map_1)
-        main_loss_3, pre_upscaled_3, output_attention_map_3 ,predict_3d_3= self.RAU(img_batch, label_batch, output_attention_map_2)
+        main_loss_3, pre_upscaled_3, output_attention_map_3,predict_3d_3= self.RAU(img_batch, label_batch, output_attention_map_2)
 
 
         return main_loss_1, pre_upscaled_1, output_attention_map_1,predict_3d_1,main_loss_2, pre_upscaled_2, \

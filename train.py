@@ -166,9 +166,9 @@ def main():
     preds_2_summary = tf.py_func(decode_labels_by_batch, [pre_upscaled_2, SAVE_NUM_IMAGES], tf.uint8)
     preds_3_summary = tf.py_func(decode_labels_by_batch, [pre_upscaled_3, SAVE_NUM_IMAGES], tf.uint8)
 
-    att_1_summary = tf.py_func(attention_map_process, [output_attention_map_1, SAVE_NUM_IMAGES], tf.uint8)
-    att_2_summary = tf.py_func(attention_map_process, [output_attention_map_2, SAVE_NUM_IMAGES], tf.uint8)
-    att_3_summary = tf.py_func(attention_map_process, [output_attention_map_3, SAVE_NUM_IMAGES], tf.uint8)
+    att_1_summary = tf.py_func(single_channel_process, [output_attention_map_1, SAVE_NUM_IMAGES], tf.uint8)
+    att_2_summary = tf.py_func(single_channel_process, [output_attention_map_2, SAVE_NUM_IMAGES], tf.uint8)
+    att_3_summary = tf.py_func(single_channel_process, [output_attention_map_3, SAVE_NUM_IMAGES], tf.uint8)
 
     predict_3d_1_summary = tf.py_func(single_channel_process, [predict_3d_1, SAVE_NUM_IMAGES], tf.uint8)
     predict_3d_2_summary = tf.py_func(single_channel_process, [predict_3d_2, SAVE_NUM_IMAGES], tf.uint8)
