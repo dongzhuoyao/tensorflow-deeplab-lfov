@@ -1,6 +1,6 @@
-ps -ef|grep tensorboard|grep -v grep|cut -c 9-15|xargs kill -9
+ps -ef|grep tensorboard|grep -v grep|cut -c 9-15|xargs kill -9 || true
 
-rm -rf summary/*
+rm -rf summary/* || true
 
-tensorboard --logdir ./summary --port 7777
+nohup tensorboard --logdir ./summary --port 7777 > tensorboard.log & || true
 
