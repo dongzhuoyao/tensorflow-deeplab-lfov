@@ -112,19 +112,21 @@ def single_channel_process(imgs, num_images):
       The batch of the size num_images with the same spatial dimensions as the input.
     """
     n, h, w, c = imgs.shape#c=1,because attention map has only one channel
+    print ("single_channel_process imgs.shape: {}".format(imgs.shape))
+
     assert (n >= num_images), 'Batch size %d should be greater or equal than number of images to save %d.' % (
     n, num_images)
     outputs = np.zeros((num_images, h, w, 3), dtype=np.uint8)
     for i in range(num_images):
-        tmp = (imgs[i])[:, :, ::-1].flatten()
+        tmp = imgs[i].flatten()
         bins = np.array([0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0])
         tmp = np.digitize(tmp, bins)
-        tmp = tmp*255.0/tmp.max()
-        tmp = tmp.reshape((h,w)).astype(np.uint8)
+        #tmp = tmp*255.0/tmp.max()
+        #tmp = tmp.reshape((h,w)).astype(np.uint8)
 
-        outputs[i, :, :, 0] = tmp
-        outputs[i, :, :, 1] = tmp
-        outputs[i, :, :, 2] = tmp
+        outputs[i, :, :, 0] = tmp.max()*np.ones(h,w)
+        outputs[i, :, :, 1] = tmp.max()*np.ones(h,w)
+        outputs[i, :, :, 2] = tmp.max()*np.ones(h,w)
     return outputs
 
 
@@ -144,7 +146,7 @@ def attention_map_process(imgs, num_images):
     n, num_images)
     outputs = np.zeros((num_images, h, w, 3), dtype=np.uint8)
     for i in range(num_images):
-        tmp = (imgs[i])[:, :, ::-1].flatten()
+        tmp = imgs[i].flatten()
         bins = np.array([0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
         tmp = np.digitize(tmp, bins)
         tmp = tmp * 255.0 / tmp.max()
