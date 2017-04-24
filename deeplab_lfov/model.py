@@ -135,7 +135,7 @@ class DeepLabLFOVModel(object):
                     v_idx += 1
 
                     #aggregate the last convolution ,and finally return to fomulate the attention map
-                    if l_idx == dilations[b_idx]-1:
+                    if l_idx == len(dilations[b_idx])-1:
                         if b_idx == 1:
                             aggregated_feat = tf.image.resize_bilinear(current, tf.shape(input_batch)[1:3,])
                             print("b_idx:1 aggregated_feat.get_shape(): {}".format(aggregated_feat.get_shape()))
