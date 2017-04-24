@@ -329,9 +329,9 @@ class DeepLabLFOVModel(object):
         pre_attention_map = tf.reshape(pre_attention_map,label_batch.get_shape()[0:3])
         print("pre_attention_map shape: {}".format(pre_attention_map.get_shape()))
         pre_attention_map = tf.expand_dims(pre_attention_map,axis=3)
-        print("pre_attention_map afater expand_dims shape: {}".format(pre_attention_map.get_shape()))
-        pre_attention_map = tf.concat([pre_attention_map,pre_attention_map,pre_attention_map],axis=-1)
-        print("pre_attention_map afater concat shape: {}".format(pre_attention_map.get_shape()))
+        print("pre_attention_map after expand_dims shape: {}".format(pre_attention_map.get_shape()))
+        #pre_attention_map = tf.concat([pre_attention_map,pre_attention_map,pre_attention_map],axis=-1)
+        #print("pre_attention_map after concat shape: {}".format(pre_attention_map.get_shape()))
 
 
         raw_output,attention_map_predicted = self._create_reusable_nework(img_batch,pre_attention_map)
