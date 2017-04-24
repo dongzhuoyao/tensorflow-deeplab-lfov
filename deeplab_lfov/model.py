@@ -97,7 +97,7 @@ class DeepLabLFOVModel(object):
         return var
     
     
-    def _create_network(self, input_batch,keep_prob):
+    def _create_network(self, input_batch,attention_map,keep_prob):
         """Construct DeepLab-LargeFOV network.
         
         Args:
@@ -107,23 +107,48 @@ class DeepLabLFOVModel(object):
         Returns:
           A downsampled segmentation mask. 
         """
-        current = input_batch
+        current = tf.concat([input_batch, attention_map], 3)
         
         v_idx = 0 # Index variable.
         is_deal_first_layer = 0
-        
+
+
+
         # Last block is the classification layer.
         for b_idx in xrange(len(dilations) - 1):
-            for l_idx, dilation in enumerate(dilations[b_idx]):
-                w = self.variables[v_idx * 2]
-                b = self.variables[v_idx * 2 + 1]
-                if dilation == 1:
-                    conv = tf.nn.conv2d(current, w, strides=[1, 1, 1, 1], padding='SAME')
-                else:
-                    conv = tf.nn.atrous_conv2d(current, w, dilation, padding='SAME')
-                current = tf.nn.relu(tf.nn.bias_add(conv, b))
-                v_idx += 1
-            # Optional pooling and dropout after each block.
+            if __name__ == '__main__':
+                for l_idx, dilation in enumerate(dilations[b_idx]):
+                    w = self.variables[v_idx * 2]
+                    b = self.variables[v_idx * 2 + 1]
+                    if not is_deal_first_layer:
+                        w_append = tf.get_variable(name="filter_of_attention_map", shape=[3, 3, 1, 64],
+                                                   initializer=tf.contrib.layers.xavier_initializer())
+
+                        w = tf.concat([w, w_append], 2)
+                        is_deal_first_layer = 1
+
+                    if dilation == 1:
+                        conv = tf.nn.conv2d(current, w, strides=[1, 1, 1, 1], padding='SAME')
+                    else:
+                        conv = tf.nn.atrous_conv2d(current, w, dilation, padding='SAME')
+                    current = tf.nn.relu(tf.nn.bias_add(conv, b))
+                    v_idx += 1
+
+                    #aggregate the last convolution ,and finally return to fomulate the attention map
+                    if l_idx == dilations[b_idx]-1:
+                        if b_idx == 1:
+                            aggregated_feat = tf.image.resize_bilinear(current, tf.shape(input_batch)[1:3,])
+                            print("b_idx:1 aggregated_feat.get_shape(): {}".format(aggregated_feat.get_shape()))
+                        elif b_idx == 2:
+                            aggregated_feat = tf.concat(aggregated_feat,tf.image.resize_bilinear(current, tf.shape(input_batch)[1:3,]))
+                            print("b_idx:2 aggregated_feat.get_shape(): {}".format(aggregated_feat.get_shape()))
+                        elif b_idx == 3:
+                            aggregated_feat = tf.concat(aggregated_feat,
+                                                        tf.image.resize_bilinear(current, tf.shape(input_batch)[1:3, ]))
+                            print("b_idx:3 aggregated_feat.get_shape(): {}".format(aggregated_feat.get_shape()))
+                        else:
+                            pass
+                            # Optional pooling and dropout after each block.
             if b_idx < 3:
                 current = tf.nn.max_pool(current, 
                                          ksize=[1, ks, ks, 1],
@@ -152,9 +177,101 @@ class DeepLabLFOVModel(object):
         conv = tf.nn.conv2d(current, w, strides=[1, 1, 1, 1], padding='SAME')
         current = tf.nn.bias_add(conv, b)
 
-        return current
+        att_w = tf.get_variable(name="aggregated_feat_w", shape=[1, 1, aggregated_feat.get_shape()[3], 1],
+                                initializer=tf.contrib.layers.xavier_initializer())
+        att_b = tf.Variable(tf.random_normal([1]))
+        aggregated_feat_1 = tf.nn.conv2d(aggregated_feat, att_w, strides=[1, 1, 1, 1], padding='SAME')
+        aggregated_feat_2 = tf.nn.relu(tf.nn.bias_add(aggregated_feat_1, att_b))
 
 
+        return current,aggregated_feat_2
+
+    def _create_attention_network(self, input_batch, keep_prob):
+        """Construct DeepLab-LargeFOV network.
+
+        Args:
+          input_batch: batch of pre-processed images.
+          keep_prob: probability of keeping neurons intact.
+
+        Returns:
+          A downsampled segmentation mask.
+        """
+        current = input_batch
+
+        v_idx = 0  # Index variable.
+        is_deal_first_layer = 0
+
+        # Last block is the classification layer.
+        for b_idx in xrange(len(dilations) - 1):
+            if __name__ == '__main__':
+                for l_idx, dilation in enumerate(dilations[b_idx]):
+                    w = self.variables[v_idx * 2]
+                    b = self.variables[v_idx * 2 + 1]
+                    if not is_deal_first_layer:
+                        w_append = tf.get_variable(name="filter_of_attention_map", shape=[3, 3, 1, 64],
+                                                   initializer=tf.contrib.layers.xavier_initializer())
+
+                        w = tf.concat([w, w_append], 2)
+                        is_deal_first_layer = 1
+
+                    if dilation == 1:
+                        conv = tf.nn.conv2d(current, w, strides=[1, 1, 1, 1], padding='SAME')
+                    else:
+                        conv = tf.nn.atrous_conv2d(current, w, dilation, padding='SAME')
+                    current = tf.nn.relu(tf.nn.bias_add(conv, b))
+                    v_idx += 1
+
+                    # aggregate the last convolution ,and finally return to fomulate the attention map
+                    if l_idx == dilations[b_idx] - 1:
+                        if b_idx == 1:
+                            aggregated_feat = tf.image.resize_bilinear(current, tf.shape(input_batch)[1:3, ])
+                            print("b_idx:1 aggregated_feat.get_shape(): {}".format(aggregated_feat.get_shape()))
+                        elif b_idx == 2:
+                            aggregated_feat = tf.concat(aggregated_feat,
+                                                        tf.image.resize_bilinear(current, tf.shape(input_batch)[1:3, ]))
+                            print("b_idx:2 aggregated_feat.get_shape(): {}".format(aggregated_feat.get_shape()))
+                        elif b_idx == 3:
+                            aggregated_feat = tf.concat(aggregated_feat,
+                                                        tf.image.resize_bilinear(current, tf.shape(input_batch)[1:3, ]))
+                            print("b_idx:3 aggregated_feat.get_shape(): {}".format(aggregated_feat.get_shape()))
+                        else:
+                            pass
+                            # Optional pooling and dropout after each block.
+            if b_idx < 3:
+                current = tf.nn.max_pool(current,
+                                         ksize=[1, ks, ks, 1],
+                                         strides=[1, 2, 2, 1],
+                                         padding='SAME')
+            elif b_idx == 3:
+                current = tf.nn.max_pool(current,
+                                         ksize=[1, ks, ks, 1],
+                                         strides=[1, 1, 1, 1],
+                                         padding='SAME')
+            elif b_idx == 4:
+                current = tf.nn.max_pool(current,
+                                         ksize=[1, ks, ks, 1],
+                                         strides=[1, 1, 1, 1],
+                                         padding='SAME')
+                current = tf.nn.avg_pool(current,
+                                         ksize=[1, ks, ks, 1],
+                                         strides=[1, 1, 1, 1],
+                                         padding='SAME')
+            elif b_idx <= 6:
+                current = tf.nn.dropout(current, keep_prob=keep_prob)
+
+        # Classification layer; no ReLU.
+        w = self.variables[v_idx * 2]
+        b = self.variables[v_idx * 2 + 1]
+        conv = tf.nn.conv2d(current, w, strides=[1, 1, 1, 1], padding='SAME')
+        current = tf.nn.bias_add(conv, b)
+
+        att_w = tf.get_variable(name="aggregated_feat_w", shape=[1, 1, aggregated_feat.get_shape()[3], 1],
+                                initializer=tf.contrib.layers.xavier_initializer())
+        att_b = tf.Variable(tf.random_normal([1]))
+        aggregated_feat_1 = tf.nn.conv2d(aggregated_feat, att_w, strides=[1, 1, 1, 1], padding='SAME')
+        aggregated_feat_2 = tf.nn.relu(tf.nn.bias_add(aggregated_feat_1, att_b))
+
+        return aggregated_feat_2
 
     
     def prepare_label(self, input_batch, new_size):
@@ -174,13 +291,13 @@ class DeepLabLFOVModel(object):
             input_batch = tf.one_hot(input_batch, depth=21)
         return input_batch
 
-    def _create_reusable_nework(self,img_batch):
+    def _create_reusable_nework(self,img_batch,pre_attention_map):
         with tf.variable_scope('resusable_network', reuse=True):
-            result = self._create_network(tf.cast(img_batch, tf.float32), keep_prob=tf.constant(0.5))
-        return result
+            main_net,aggregated_feat = self._create_network(tf.cast(img_batch, tf.float32), pre_attention_map,keep_prob=tf.constant(0.5),)
+        return main_net,aggregated_feat
 
       
-    def preds(self, input_batch):
+    def preds(self, img_batch):
         """Create the network and run inference on the input batch.
         
         Args:
@@ -189,13 +306,17 @@ class DeepLabLFOVModel(object):
         Returns:
           Argmax over the predictions of the network of the same shape as the input.
         """
-        print("predicts: input_batch_shape: {}".format(input_batch.get_shape()))
-        raw_output = self._create_network(tf.cast(input_batch, tf.float32), keep_prob=tf.constant(1.0))
-        raw_output = tf.image.resize_bilinear(raw_output, tf.shape(input_batch)[1:3,])
-        raw_output = tf.argmax(raw_output, dimension=3)
-        raw_output = tf.expand_dims(raw_output, dim=3) # Create 4D-tensor.
-        print("predicts: raw_output: {}".format(raw_output.get_shape()))
-        return tf.cast(raw_output, tf.uint8)
+        init_attention_map = tf.ones(img_batch.get_shape()[0:3], tf.float32)
+        print("init_attention_map shape: {}".format(init_attention_map.get_shape()))
+        attention_map_1 = self._create_attention_network(img_batch, keep_prob=tf.constant(1.0))
+        raw_output, aggregated_feat = self._create_reusable_nework(img_batch, attention_map_1)
+        pre_upscaled_4d = tf.image.resize_bilinear(raw_output, tf.shape(img_batch)[1:3, ])
+        pre_upscaled_4d = tf.argmax(pre_upscaled_4d, dimension=3)
+        pre_upscaled_4d = tf.expand_dims(pre_upscaled_4d, dim=3)  # from 3-D to 4-D
+        pre_upscaled_4d = tf.cast(pre_upscaled_4d, tf.uint8)
+
+        return pre_upscaled_4d
+
 
     def RAU(self, img_batch, label_batch,pre_attention_map):
 
@@ -211,13 +332,12 @@ class DeepLabLFOVModel(object):
         print("pre_attention_map afater expand_dims shape: {}".format(pre_attention_map.get_shape()))
         pre_attention_map = tf.concat([pre_attention_map,pre_attention_map,pre_attention_map],axis=-1)
         print("pre_attention_map afater concat shape: {}".format(pre_attention_map.get_shape()))
-        #apply attention map
-        img_batch = tf.multiply(img_batch,pre_attention_map)
-        
 
 
-        #raw_output = self._create_network(tf.cast(img_batch, tf.float32), keep_prob=tf.constant(0.5))
-        raw_output = self._create_reusable_nework(img_batch)
+        raw_output,attention_map_predicted = self._create_reusable_nework(img_batch,pre_attention_map)
+        print("final aggregated_feat.get_shape(): {}".format(attention_map_predicted.get_shape()))
+
+
 
         pre_upscaled_4d = predict_4d = tf.image.resize_bilinear(raw_output, tf.shape(img_batch)[1:3, ])
         pre_upscaled_4d = tf.argmax(pre_upscaled_4d, dimension=3)
@@ -252,12 +372,16 @@ class DeepLabLFOVModel(object):
         att_3d_inverse = tf.cast(tf.equal(gt_upscaled, pre_upscaled_4d), tf.float32)
 
 
-        output_attention_map = tf.add(tf.multiply(predict_3d,att_3d),tf.multiply(predict_3d_inverse,att_3d_inverse))
+        attention_map_gt = tf.add(tf.multiply(predict_3d,att_3d),tf.multiply(predict_3d_inverse,att_3d_inverse))
 
-        print "attention_map size: {}".format(output_attention_map.get_shape())
+        print "attention_map size: {}".format(attention_map_gt.get_shape())
 
+        # deal with aggregated feature map.
 
-        return main_loss,pre_upscaled_4d,output_attention_map,predict_3d
+        attention_loss = tf.nn.l2_loss(attention_map_predicted - attention_map_gt, name="attention_loss")
+        attention_loss = tf.reduce_mean(attention_loss)
+
+        return main_loss,attention_loss,pre_upscaled_4d,attention_map_gt,attention_map_predicted,predict_3d
 
     
     def loss(self, img_batch, label_batch):
@@ -270,12 +394,13 @@ class DeepLabLFOVModel(object):
           Pixel-wise softmax loss.
         """
         #init attention map
-        init_attention_map = tf.zeros(img_batch.get_shape()[0:3], tf.float32)
+        init_attention_map = tf.ones(img_batch.get_shape()[0:3], tf.float32)
         print("init_attention_map shape: {}".format(init_attention_map.get_shape()))
-        main_loss_1, pre_upscaled_1, output_attention_map_1,predict_3d_1 = self.RAU(img_batch, label_batch,init_attention_map)
-        main_loss_2, pre_upscaled_2, output_attention_map_2,predict_3d_2 = self.RAU(img_batch, label_batch, output_attention_map_1)
-        main_loss_3, pre_upscaled_3, output_attention_map_3,predict_3d_3= self.RAU(img_batch, label_batch, output_attention_map_2)
+        main_loss_1,attention_loss_1, pre_upscaled_1, output_attention_map_1,attention_map_1_predicted,predict_3d_1 = self.RAU(img_batch, label_batch,init_attention_map)
+        main_loss_2,attention_loss_2, pre_upscaled_2, output_attention_map_2,attention_map_2_predicted,predict_3d_2 = self.RAU(img_batch, label_batch, output_attention_map_1)
+        main_loss_3,attention_loss_3, pre_upscaled_3, output_attention_map_3,attention_map_3_predicted,predict_3d_3= self.RAU(img_batch, label_batch, output_attention_map_2)
 
 
-        return main_loss_1, pre_upscaled_1, output_attention_map_1,predict_3d_1,main_loss_2, pre_upscaled_2, \
-               output_attention_map_2,predict_3d_2,main_loss_3, pre_upscaled_3, output_attention_map_3,predict_3d_3
+        return main_loss_1,attention_loss_1, pre_upscaled_1, output_attention_map_1,attention_map_1_predicted,predict_3d_1,\
+               main_loss_2,attention_loss_2, pre_upscaled_2, output_attention_map_2,attention_map_2_predicted,predict_3d_2,\
+               main_loss_3,attention_loss_3, pre_upscaled_3, output_attention_map_3,attention_map_3_predicted,predict_3d_3

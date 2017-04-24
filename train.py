@@ -138,17 +138,22 @@ def main():
 
 
     # Define the loss and optimisation parameters.
-    main_loss_1, pre_upscaled_1, output_attention_map_1,predict_3d_1, main_loss_2, pre_upscaled_2,\
-    output_attention_map_2,predict_3d_2, main_loss_3, pre_upscaled_3, output_attention_map_3 ,predict_3d_3 = net.loss(image_batch, label_batch)
+    main_loss_1,attention_loss_1, pre_upscaled_1, output_attention_map_1,attention_map_1_predicted,predict_3d_1,\
+    main_loss_2,attention_loss_2, pre_upscaled_2,output_attention_map_2,attention_map_2_predicted,predict_3d_2, \
+    main_loss_3,attention_loss_3, pre_upscaled_3, output_attention_map_3 ,attention_map_3_predicted,predict_3d_3\
+        = net.loss(image_batch, label_batch)
 
-    loss = (main_loss_1+0.8*main_loss_2+0.64*main_loss_3)*100
+    main_loss = (main_loss_1+main_loss_2+main_loss_3)
+    attention_loss = attention_loss_1+attention_loss_2+attention_loss_3
+    joint_loss = main_loss+attention_loss
 
     learning_rate = tf.placeholder(tf.float32, shape=[])
-    optimiser = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9)
-
-
+    att_learning_rate = tf.placeholder(tf.float32, shape=[])
     trainable = tf.trainable_variables()
-    optim = optimiser.minimize(loss, var_list=trainable)
+
+    optim = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9).minimize(joint_loss, var_list=trainable)
+    att_optim = tf.train.MomentumOptimizer(learning_rate=att_learning_rate, momentum=0.9).minimize(attention_loss,var_list=trainable)
+
     pred_result = net.preds(image_batch)
 
     def convert(image):
@@ -174,29 +179,44 @@ def main():
     predict_3d_2_summary = tf.py_func(single_channel_process, [predict_3d_2, SAVE_NUM_IMAGES], tf.uint8)
     predict_3d_3_summary = tf.py_func(single_channel_process, [predict_3d_3, SAVE_NUM_IMAGES], tf.uint8)
 
+    attention_map_1_predicted_summary = tf.py_func(single_channel_process, [attention_map_1_predicted, SAVE_NUM_IMAGES], tf.uint8)
+    attention_map_2_predicted_summary = tf.py_func(single_channel_process, [attention_map_2_predicted, SAVE_NUM_IMAGES], tf.uint8)
+    attention_map_3_predicted_summary = tf.py_func(single_channel_process, [attention_map_3_predicted, SAVE_NUM_IMAGES], tf.uint8)
+
+    # define Summary
+    summary_list = []
+    for var in tf.trainable_variables():
+        summary_list.append(tf.summary.histogram(var.op.name + "/values", var))
+
     #summary
     with tf.name_scope("loss_summary"):
-        loss_summary = tf.summary.scalar("loss",loss)
-        loss_1_summary = tf.summary.scalar("loss_1", main_loss_1)
-        loss_2_summary = tf.summary.scalar("loss_2", main_loss_2)
-        loss_3_summary = tf.summary.scalar("loss_3", main_loss_3)
+        summary_list.append(tf.summary.scalar("joint_loss",joint_loss))
+        summary_list.append(tf.summary.scalar("main_loss", main_loss))
+        summary_list.append(tf.summary.scalar("attention_loss", attention_loss))
+        summary_list.append(tf.summary.scalar("loss_1", main_loss_1))
+        summary_list.append(tf.summary.scalar("loss_2", main_loss_2))
+        summary_list.append(tf.summary.scalar("loss_3", main_loss_3))
 
     with tf.name_scope("image_summary"):
         #origin_summary = tf.summary.image("origin", images_summary)
         #label_summary = tf.summary.image("label", labels_summary)
-        tf.summary.image("predict_1", preds_1_summary)
-        tf.summary.image("predict_2", preds_2_summary)
-        tf.summary.image("predict_3", preds_3_summary)
-        total_summary = tf.summary.image('total_image',
+        summary_list.append(tf.summary.image('total_image',
                          tf.concat([images_summary, labels_summary, preds_1_summary,att_1_summary,preds_2_summary,att_2_summary,preds_3_summary,att_3_summary ], 2),
-                         max_outputs=SAVE_NUM_IMAGES)
+                         max_outputs=SAVE_NUM_IMAGES))
 
-        credit_summary = tf.summary.image('credit_image',
+        summary_list.append(tf.summary.image('attention_image',
+                                             tf.concat([images_summary, labels_summary, att_1_summary, attention_map_1_predicted_summary,
+                                                        att_2_summary, attention_map_2_predicted_summary, att_3_summary, attention_map_3_predicted_summary],
+                                                       2),
+                                             max_outputs=SAVE_NUM_IMAGES))
+
+        summary_list.append(tf.summary.image('confidence_map',
                                          tf.concat([images_summary, labels_summary,predict_3d_1_summary,predict_3d_2_summary,predict_3d_3_summary], 2),
-                                         max_outputs=SAVE_NUM_IMAGES)
+                                         max_outputs=SAVE_NUM_IMAGES))
 
-    merged_summary_op = tf.summary.merge([total_summary,credit_summary, loss_summary,loss_1_summary,loss_2_summary,loss_3_summary])
 
+    merged_summary_op = tf.summary.merge(summary_list)
+    #merged_summary_op = tf.summary.merge_all()
 
     summary_writer = tf.summary.FileWriter(args.summay_dir, sess.graph)
 
@@ -213,14 +233,11 @@ def main():
     for tmp in var_to_be_restored:
         print("variable name: {},type: {}".format(tmp.name,type(tmp.name)))
 
-    saver = tf.train.Saver(var_list=var_to_be_restored, max_to_keep=40)
+    readSaver = tf.train.Saver(var_list=var_to_be_restored, max_to_keep=40)
+    writeSaver = tf.train.Saver( max_to_keep=40)
     if args.restore_from is not None:
-       load(saver, sess, args.restore_from)
+       load(readSaver, sess, args.restore_from)
 
-
-    #define Summary
-    for var in tf.trainable_variables():
-        tf.summary.histogram(var.op.name + "/values", var)
 
     with tf.name_scope("parameter_count"):
         parameter_count = tf.reduce_sum([tf.reduce_prod(tf.shape(v)) for v in tf.trainable_variables()])
@@ -243,12 +260,12 @@ def main():
         print("current learning rate: {}".format(cur_lr))
 
 
-        _loss,_main_loss_1, _pre_upscaled_1, _output_attention_map_1, _main_loss_2, _pre_upscaled_2,\
-_output_attention_map_2, _main_loss_3, _pre_upscaled_3, _output_attention_map_3 = sess.run([loss,main_loss_1, pre_upscaled_1, output_attention_map_1, main_loss_2, pre_upscaled_2,\
+        _joint_loss,_main_loss,_attention_loss,_main_loss_1, _pre_upscaled_1, _output_attention_map_1, _main_loss_2, _pre_upscaled_2,\
+_output_attention_map_2, _main_loss_3, _pre_upscaled_3, _output_attention_map_3 = sess.run([joint_loss,main_loss,attention_loss,main_loss_1, pre_upscaled_1, output_attention_map_1, main_loss_2, pre_upscaled_2,\
 output_attention_map_2, main_loss_3, pre_upscaled_3, output_attention_map_3],feed_dict={learning_rate:cur_lr})
 
 
-        print('step {:d} \t total_loss: {:.3f}, loss 1: {:.3f}, loss 2: {:.3f}, loss 3: {:.3f}'.format(step,_loss,_main_loss_1,_main_loss_2,_main_loss_3))
+        print('step {:d} \t total_loss: {:.3f},main_loss: {:.3f}, attention_loss: {:.3f}, loss 1: {:.3f}, loss 2: {:.3f}, loss 3: {:.3f}'.format(step,_joint_loss,_main_loss,_attention_loss,_main_loss_1,_main_loss_2,_main_loss_3))
 
         if step % args.summary_freq == 0:
             print("write summay...")
@@ -279,7 +296,7 @@ output_attention_map_2, main_loss_3, pre_upscaled_3, output_attention_map_3],fee
                 axes.flat[i * 3 + 2].imshow(decode_labels(preds_result_value[i, :, :, 0]))
             plt.savefig(args.save_dir + str(start_time) + ".png")
             plt.close(fig)
-            save(saver, sess, args.snapshot_dir, step)
+            save(writeSaver, sess, args.snapshot_dir, step)
 
         duration = time.time() - start_time
         print('step {:d} \t  ({:.3f} sec/step)'.format(step, duration))
