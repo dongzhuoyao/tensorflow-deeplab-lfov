@@ -187,7 +187,7 @@ class DeepLabLFOVModel(object):
 
 
         return current,aggregated_feat_2
-        
+
 
     def _create_attention_network(self, input_batch, keep_prob):
         """Construct DeepLab-LargeFOV network.
@@ -296,6 +296,9 @@ class DeepLabLFOVModel(object):
 
     def _create_reusable_nework(self,img_batch,pre_attention_map):
         with tf.variable_scope('resusable_network', reuse=True):
+            #create it for share weight,
+            tf.get_variable(name="filter_of_attention_map", shape=[3, 3, 1, 64],
+                            initializer=tf.contrib.layers.xavier_initializer())
             main_net,aggregated_feat = self._create_network(tf.cast(img_batch, tf.float32), pre_attention_map,keep_prob=tf.constant(0.5),)
         return main_net,aggregated_feat
 
