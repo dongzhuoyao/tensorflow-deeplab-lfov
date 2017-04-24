@@ -135,6 +135,7 @@ class DeepLabLFOVModel(object):
                     v_idx += 1
 
                     #aggregate the last convolution ,and finally return to fomulate the attention map
+                    '''
                     if l_idx == len(dilations[b_idx])-1:
                         if b_idx == 1:
                             aggregated_feat = tf.image.resize_bilinear(current, tf.shape(input_batch)[1:3,])
@@ -149,6 +150,7 @@ class DeepLabLFOVModel(object):
                         else:
                             pass
                             # Optional pooling and dropout after each block.
+                    '''
             if b_idx < 3:
                 current = tf.nn.max_pool(current, 
                                          ksize=[1, ks, ks, 1],
@@ -176,7 +178,7 @@ class DeepLabLFOVModel(object):
         b = self.variables[v_idx * 2 + 1]
         conv = tf.nn.conv2d(current, w, strides=[1, 1, 1, 1], padding='SAME')
         current = tf.nn.bias_add(conv, b)
-
+        '''
         att_w = tf.get_variable(name="aggregated_feat_w", shape=[1, 1, aggregated_feat.get_shape()[3], 1],
                                 initializer=tf.contrib.layers.xavier_initializer())
         att_b = tf.Variable(tf.random_normal([1]))
@@ -185,6 +187,8 @@ class DeepLabLFOVModel(object):
 
 
         return current,aggregated_feat_2
+        '''
+        return current
 
     def _create_attention_network(self, input_batch, keep_prob):
         """Construct DeepLab-LargeFOV network.
@@ -199,7 +203,7 @@ class DeepLabLFOVModel(object):
         current = input_batch
 
         v_idx = 0  # Index variable.
-        is_deal_first_layer = 0
+        #is_deal_first_layer = 0
 
         # Last block is the classification layer.
         for b_idx in xrange(len(dilations) - 1):
@@ -207,12 +211,12 @@ class DeepLabLFOVModel(object):
                 for l_idx, dilation in enumerate(dilations[b_idx]):
                     w = self.variables[v_idx * 2]
                     b = self.variables[v_idx * 2 + 1]
-                    if not is_deal_first_layer:
-                        w_append = tf.get_variable(name="filter_of_attention_map", shape=[3, 3, 1, 64],
-                                                   initializer=tf.contrib.layers.xavier_initializer())
+                    #if not is_deal_first_layer:
+                    #    w_append = tf.get_variable(name="filter_of_attention_map", shape=[3, 3, 1, 64],
+                    #                               initializer=tf.contrib.layers.xavier_initializer())
 
-                        w = tf.concat([w, w_append], 2)
-                        is_deal_first_layer = 1
+                    #   w = tf.concat([w, w_append], 2)
+                    #   is_deal_first_layer = 1
 
                     if dilation == 1:
                         conv = tf.nn.conv2d(current, w, strides=[1, 1, 1, 1], padding='SAME')
