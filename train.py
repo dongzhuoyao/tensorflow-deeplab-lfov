@@ -303,6 +303,7 @@ output_attention_map_2, main_loss_3, pre_upscaled_3, output_attention_map_3],fee
 
 
 
+
     coord.request_stop()
     coord.join(threads)
     
