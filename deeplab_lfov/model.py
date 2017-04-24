@@ -213,6 +213,7 @@ class DeepLabLFOVModel(object):
         print("pre_attention_map afater concat shape: {}".format(pre_attention_map.get_shape()))
         #apply attention map
         img_batch = tf.multiply(img_batch,pre_attention_map)
+        
 
 
         #raw_output = self._create_network(tf.cast(img_batch, tf.float32), keep_prob=tf.constant(0.5))
