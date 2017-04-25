@@ -325,7 +325,7 @@ class DeepLabLFOVModel(object):
         #1,generate attention map
         attention_map_1 = self._create_attention_network(img_batch, keep_prob=tf.constant(1.0))
         #2,do prediction
-        raw_output, aggregated_feat = self._create_reusable_nework(img_batch, attention_map_1)
+        raw_output, aggregated_feat = self._create_reusable_nework(img_batch, attention_map_1,False)
         pre_upscaled_4d = tf.image.resize_bilinear(raw_output, tf.shape(img_batch)[1:3, ])
         pre_upscaled_4d = tf.argmax(pre_upscaled_4d, dimension=3)
         pre_upscaled_4d = tf.expand_dims(pre_upscaled_4d, dim=3)  # from 3-D to 4-D
