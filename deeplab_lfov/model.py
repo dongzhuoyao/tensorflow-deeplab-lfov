@@ -317,6 +317,7 @@ class DeepLabLFOVModel(object):
           Argmax over the predictions of the network of the same shape as the input.
         """
         init_attention_map = tf.ones(img_batch.get_shape()[0:3], tf.float32)
+        init_attention_map = tf.expand_dims(init_attention_map, dim=3)
         print("init_attention_map shape: {}".format(init_attention_map.get_shape()))
         with tf.variable_scope("resusable_network") as scope:
             #1,generate attention map
