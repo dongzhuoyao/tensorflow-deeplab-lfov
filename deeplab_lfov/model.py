@@ -320,6 +320,7 @@ class DeepLabLFOVModel(object):
         init_attention_map = tf.expand_dims(init_attention_map, dim=3)
         print("init_attention_map shape: {}".format(init_attention_map.get_shape()))
         with tf.variable_scope("resusable_network") as scope:
+            scope.reuse_variables()
             #1,generate attention map
             attention_map_1 = self._create_attention_network(img_batch, init_attention_map,keep_prob=tf.constant(1.0))
             #2,do prediction
