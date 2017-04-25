@@ -2,21 +2,11 @@ import tensorflow as tf
 
 import tensorflow as tf
 
-initializer = tf.constant_initializer(value=1)
-w_append = tf.get_variable(name="filter_of_attention_map", shape=[3, 3, 1, 64])
-#var1 = tf.get_variable(name='var1', shape=[1], dtype=tf.float32, initializer=initializer)
+
 var2 = tf.Variable(name='var2', initial_value=[2], dtype=tf.float32)
 var21 = tf.Variable(name='var2', initial_value=[2.1], dtype=tf.float32)
 var22 = tf.Variable(name='var2', initial_value=[2.2], dtype=tf.float32)
 
-#with tf.variable_scope("a_name_scope", reuse=True):
-#    for i in xrange(3):
-initializer = tf.constant_initializer(value=1)
-w_append = tf.get_variable(name="filter_of_attention_map", shape=[3, 3, 1, 64])
-#var1 = tf.get_variable(name='var1', shape=[1], dtype=tf.float32, initializer=initializer)
-var2 = tf.Variable(name='var2', initial_value=[2], dtype=tf.float32)
-var21 = tf.Variable(name='var2', initial_value=[2.1], dtype=tf.float32)
-var22 = tf.Variable(name='var2', initial_value=[2.2], dtype=tf.float32)
 
 
 with tf.Session() as sess:
