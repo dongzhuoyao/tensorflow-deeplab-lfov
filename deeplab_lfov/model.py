@@ -216,8 +216,8 @@ class DeepLabLFOVModel(object):
 
         # Last block is the classification layer.
         for b_idx in xrange(len(dilations) - 1):
-            if __name__ == '__main__':
-                for l_idx, dilation in enumerate(dilations[b_idx]):
+
+            for l_idx, dilation in enumerate(dilations[b_idx]):
                     w = self.variables[v_idx * 2]
                     b = self.variables[v_idx * 2 + 1]
                     #if not is_deal_first_layer:
@@ -322,7 +322,9 @@ class DeepLabLFOVModel(object):
         """
         init_attention_map = tf.ones(img_batch.get_shape()[0:3], tf.float32)
         print("init_attention_map shape: {}".format(init_attention_map.get_shape()))
+        #1,generate attention map
         attention_map_1 = self._create_attention_network(img_batch, keep_prob=tf.constant(1.0))
+        #2,do prediction
         raw_output, aggregated_feat = self._create_reusable_nework(img_batch, attention_map_1)
         pre_upscaled_4d = tf.image.resize_bilinear(raw_output, tf.shape(img_batch)[1:3, ])
         pre_upscaled_4d = tf.argmax(pre_upscaled_4d, dimension=3)
