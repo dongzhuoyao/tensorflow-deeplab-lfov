@@ -336,24 +336,9 @@ class DeepLabLFOVModel(object):
 
     def RAU(self, img_batch, label_batch,pre_attention_map,is_first_setup):
 
-        #flatten it in order to do softmax
-        pre_attention_map = tf.reshape(pre_attention_map,[1,-1])
-        pre_attention_map = tf.nn.softmax(pre_attention_map)
-        #add exponential operation
-        pre_attention_map = tf.exp(pre_attention_map)
-        #restore to original shape
-        pre_attention_map = tf.reshape(pre_attention_map,label_batch.get_shape()[0:3])
-        print("pre_attention_map shape: {}".format(pre_attention_map.get_shape()))
-        pre_attention_map = tf.expand_dims(pre_attention_map,axis=3)
-        print("pre_attention_map after expand_dims shape: {}".format(pre_attention_map.get_shape()))
-        #pre_attention_map = tf.concat([pre_attention_map,pre_attention_map,pre_attention_map],axis=-1)
-        #print("pre_attention_map after concat shape: {}".format(pre_attention_map.get_shape()))
-
 
         raw_output,attention_map_predicted = self._create_reusable_nework(img_batch,pre_attention_map,is_first_setup)
         print("final aggregated_feat.get_shape(): {}".format(attention_map_predicted.get_shape()))
-
-
 
         pre_upscaled_4d = predict_4d = tf.image.resize_bilinear(raw_output, tf.shape(img_batch)[1:3, ])
         pre_upscaled_4d = tf.argmax(pre_upscaled_4d, dimension=3)
@@ -391,6 +376,17 @@ class DeepLabLFOVModel(object):
         attention_map_gt = tf.add(tf.multiply(predict_3d,att_3d),tf.multiply(predict_3d_inverse,att_3d_inverse))
 
         print "attention_map size: {}".format(attention_map_gt.get_shape())
+
+        # flatten it in order to do softmax
+        attention_map_gt = tf.reshape(attention_map_gt, [1, -1])
+        attention_map_gt = tf.nn.softmax(attention_map_gt)
+        # add exponential operation
+        #attention_map_gt = tf.exp(attention_map_gt)
+        # restore to original shape
+        attention_map_gt = tf.reshape(attention_map_gt, label_batch.get_shape()[0:3])
+        print("attention_map_gt shape: {}".format(attention_map_gt.get_shape()))
+        attention_map_gt = tf.expand_dims(attention_map_gt, axis=3)
+        print("attention_map_gt after expand_dims shape: {}".format(attention_map_gt.get_shape()))
 
         # deal with aggregated feature map.
 
