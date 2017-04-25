@@ -229,6 +229,9 @@ def main():
 
     # don't need initiate "filter_of_attention_map"!!!
     var_to_be_restored =  [x for x in trainable if u'filter_of_attention_map'.encode('utf-8') not in x.name.encode('utf-8')]
+    var_to_be_restored = [x for x in var_to_be_restored if
+                          u'aggregated_feat'.encode('utf-8') not in x.name.encode('utf-8')]
+
     # Saver for storing checkpoints of the model.
     for tmp in var_to_be_restored:
         print("variable name: {},type: {}".format(tmp.name,type(tmp.name)))
