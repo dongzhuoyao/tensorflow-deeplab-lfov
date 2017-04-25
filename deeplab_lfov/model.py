@@ -407,6 +407,7 @@ class DeepLabLFOVModel(object):
         """
         #init attention map
         init_attention_map = tf.zeros(img_batch.get_shape()[0:3], tf.float32)
+        init_attention_map = tf.expand_dims(init_attention_map, dim=3)
         print("init_attention_map shape: {}".format(init_attention_map.get_shape()))
         with tf.variable_scope("resusable_network") as scope:
             main_loss_1,attention_loss_1, pre_upscaled_1, output_attention_map_1,attention_map_1_predicted,predict_3d_1 = self.RAU(img_batch, label_batch,init_attention_map,True)
