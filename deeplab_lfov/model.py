@@ -142,6 +142,7 @@ class DeepLabLFOVModel(object):
                     if l_idx == len(dilations[b_idx])-1:
                         if b_idx == 1:
                             aggregated_feat = tf.image.resize_bilinear(current, tf.shape(input_batch)[1:3,])
+
                             print("b_idx:1 aggregated_feat.get_shape(): {}".format(aggregated_feat.get_shape()))
                         elif b_idx == 2:
                             aggregated_feat = tf.concat(aggregated_feat,tf.image.resize_bilinear(current, tf.shape(input_batch)[1:3,]))
@@ -235,14 +236,14 @@ class DeepLabLFOVModel(object):
                     if l_idx == dilations[b_idx] - 1:
                         if b_idx == 1:
                             aggregated_feat = tf.image.resize_bilinear(current, tf.shape(input_batch)[1:3, ])
-                            print("b_idx:1 aggregated_feat.get_shape(): {}".format(aggregated_feat.get_shape()))
+                            print("b_idx:1 aggregated_feat.get_shape(): {}, type: {}".format(aggregated_feat.get_shape(),type(aggregated_feat)))
                         elif b_idx == 2:
-                            aggregated_feat = tf.concat(aggregated_feat,
-                                                        tf.image.resize_bilinear(current, tf.shape(input_batch)[1:3, ]))
+                            aggregated_feat = tf.concat([aggregated_feat,
+                                                        tf.image.resize_bilinear(current, tf.shape(input_batch)[1:3, ])],axis=3)
                             print("b_idx:2 aggregated_feat.get_shape(): {}".format(aggregated_feat.get_shape()))
                         elif b_idx == 3:
-                            aggregated_feat = tf.concat(aggregated_feat,
-                                                        tf.image.resize_bilinear(current, tf.shape(input_batch)[1:3, ]))
+                            aggregated_feat = tf.concat([aggregated_feat,
+                                                        tf.image.resize_bilinear(current, tf.shape(input_batch)[1:3, ])],axis=3)
                             print("b_idx:3 aggregated_feat.get_shape(): {}".format(aggregated_feat.get_shape()))
                         else:
                             pass
