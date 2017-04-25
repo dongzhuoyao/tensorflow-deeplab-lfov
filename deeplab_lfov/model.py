@@ -235,7 +235,7 @@ class DeepLabLFOVModel(object):
                     v_idx += 1
 
                     # aggregate the last convolution ,and finally return to fomulate the attention map
-                    if l_idx == dilations[b_idx] - 1:
+                    if l_idx == len(dilations[b_idx]) - 1:
                         if b_idx == 1:
                             aggregated_feat = tf.image.resize_bilinear(current, tf.shape(input_batch)[1:3, ])
                             print("b_idx:1 aggregated_feat.get_shape(): {}, type: {}".format(aggregated_feat.get_shape(),type(aggregated_feat)))
@@ -280,7 +280,9 @@ class DeepLabLFOVModel(object):
 
         att_w = tf.get_variable(name="aggregated_feat_w", shape=[1, 1, aggregated_feat.get_shape()[3], 1],
                                 initializer=tf.contrib.layers.xavier_initializer())
-        att_b = tf.Variable(tf.random_normal([1]))
+        att_b = tf.get_variable(name="aggregated_feat_b", shape=[1],
+                                initializer=tf.contrib.layers.xavier_initializer(uniform=True))
+
         aggregated_feat_1 = tf.nn.conv2d(aggregated_feat, att_w, strides=[1, 1, 1, 1], padding='SAME')
         aggregated_feat_2 = tf.nn.relu(tf.nn.bias_add(aggregated_feat_1, att_b))
 
