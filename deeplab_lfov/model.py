@@ -112,7 +112,7 @@ class DeepLabLFOVModel(object):
         v_idx = 0 # Index variable.
         is_deal_first_layer = 0
 
-        aggregated_feat = tf.get_variable(name="aggregated_feat", shape=[])
+        aggregated_feat = tf.Variable(name="aggregated_feat", shape=[])
 
 
         # Last block is the classification layer.
@@ -209,7 +209,7 @@ class DeepLabLFOVModel(object):
           A downsampled segmentation mask.
         """
         current = tf.concat([input_batch, attention_map], 3)
-        aggregated_feat = tf.get_variable(name="aggregated_feat",shape=[])
+        aggregated_feat = tf.Variable(name="aggregated_feat",shape=[])
 
         v_idx = 0  # Index variable.
         is_deal_first_layer = 0
