@@ -274,8 +274,8 @@ def main():
         _main_loss_3, _pre_upscaled_3, _output_attention_map_3 = sess.run([main_loss,main_loss_1, pre_upscaled_1, output_attention_map_1, main_loss_2, pre_upscaled_2,\
 output_attention_map_2, main_loss_3, pre_upscaled_3, output_attention_map_3],feed_dict={learning_rate:cur_lr})
 
-        print('step {:d} \t total_loss: {:.3f},main_loss: {:.3f}, attention_loss: {:.3f}, loss 1: {:.3f}, loss 2: {:.3f}, loss 3: {:.3f}'.format(step,_joint_loss,_main_loss,_attention_loss,_main_loss_1,_main_loss_2,_main_loss_3))
-
+        print('step {:d}, main_loss: {:.3f}, loss 1: {:.3f}, loss 2: {:.3f}, loss 3: {:.3f}'.format(step,_main_loss,_main_loss_1,_main_loss_2,_main_loss_3))
+        #print ("")
         if step % args.summary_freq == 0:
             print("write summay...")
             # generate summary for tensorboard
