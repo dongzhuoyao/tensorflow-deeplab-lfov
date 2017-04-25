@@ -111,7 +111,7 @@ class DeepLabLFOVModel(object):
         
         v_idx = 0 # Index variable.
         is_deal_first_layer = 0
-
+        aggregated_feat = []
 
 
         # Last block is the classification layer.
@@ -208,6 +208,7 @@ class DeepLabLFOVModel(object):
           A downsampled segmentation mask.
         """
         current = input_batch
+        aggregated_feat = []
 
         v_idx = 0  # Index variable.
         #is_deal_first_layer = 0
