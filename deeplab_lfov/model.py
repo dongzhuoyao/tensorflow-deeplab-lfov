@@ -97,7 +97,7 @@ class DeepLabLFOVModel(object):
         return var
     
     
-    def _create_network(self, input_batch,attention_map,keep_prob):
+    def _create_network(self, input_batch,attention_map,is_first_setup,keep_prob):
         """Construct DeepLab-LargeFOV network.
         
         Args:
@@ -121,8 +121,11 @@ class DeepLabLFOVModel(object):
                     w = self.variables[v_idx * 2]
                     b = self.variables[v_idx * 2 + 1]
                     if not is_deal_first_layer:
-                        w_append = tf.get_variable(name="filter_of_attention_map", shape=[3, 3, 1, 64],
-                                                   initializer=tf.contrib.layers.xavier_initializer())
+                        if is_first_setup:
+                            w_append = tf.get_variable(name="filter_of_attention_map", shape=[3, 3, 1, 64],
+                                                       initializer=tf.contrib.layers.xavier_initializer())
+                        else:
+                            w_append = tf.get_variable(name="filter_of_attention_map")
 
                         w = tf.concat([w, w_append], 2)
                         is_deal_first_layer = 1
@@ -178,10 +181,14 @@ class DeepLabLFOVModel(object):
         b = self.variables[v_idx * 2 + 1]
         conv = tf.nn.conv2d(current, w, strides=[1, 1, 1, 1], padding='SAME')
         current = tf.nn.bias_add(conv, b)
-
-        att_w = tf.get_variable(name="aggregated_feat_w", shape=[1, 1, aggregated_feat.get_shape()[3], 1],
-                                initializer=tf.contrib.layers.xavier_initializer())
-        att_b = tf.Variable(tf.random_normal([1]))
+        if is_first_setup:
+            att_w = tf.get_variable(name="aggregated_feat_w", shape=[1, 1, aggregated_feat.get_shape()[3], 1],
+                                    initializer=tf.contrib.layers.xavier_initializer())
+            att_b = tf.get_variable(name="aggregated_feat_b", shape=[1],
+                                    initializer=tf.contrib.layers.xavier_initializer(uniform=True))
+        else:
+            att_w = tf.get_variable(name="aggregated_feat_w")
+            att_b = tf.get_variable(name="aggregated_feat_b")
         aggregated_feat_1 = tf.nn.conv2d(aggregated_feat, att_w, strides=[1, 1, 1, 1], padding='SAME')
         aggregated_feat_2 = tf.nn.relu(tf.nn.bias_add(aggregated_feat_1, att_b))
 
@@ -294,13 +301,9 @@ class DeepLabLFOVModel(object):
             input_batch = tf.one_hot(input_batch, depth=21)
         return input_batch
 
-    def _create_reusable_nework(self,img_batch,pre_attention_map):
-        with tf.variable_scope('resusable_network', reuse=True):
-            #create it for share weight,
-            tf.get_variable(name="filter_of_attention_map", shape=[3, 3, 1, 64],initializer=tf.contrib.layers.xavier_initializer())
-            tf.get_variable_scope().reuse_variables()
-            main_net,aggregated_feat = self._create_network(tf.cast(img_batch, tf.float32), pre_attention_map,keep_prob=tf.constant(0.5),)
-        return main_net,aggregated_feat
+    def _create_reusable_nework(self,img_batch,pre_attention_map,is_first_setup):
+            main_net,aggregated_feat = self._create_network(tf.cast(img_batch, tf.float32), pre_attention_map,is_first_setup,keep_prob=tf.constant(0.5),)
+            return main_net,aggregated_feat
 
       
     def preds(self, img_batch):
@@ -324,7 +327,7 @@ class DeepLabLFOVModel(object):
         return pre_upscaled_4d
 
 
-    def RAU(self, img_batch, label_batch,pre_attention_map):
+    def RAU(self, img_batch, label_batch,pre_attention_map,is_first_setup):
 
         #flatten it in order to do softmax
         pre_attention_map = tf.reshape(pre_attention_map,[1,-1])
@@ -340,7 +343,7 @@ class DeepLabLFOVModel(object):
         #print("pre_attention_map after concat shape: {}".format(pre_attention_map.get_shape()))
 
 
-        raw_output,attention_map_predicted = self._create_reusable_nework(img_batch,pre_attention_map)
+        raw_output,attention_map_predicted = self._create_reusable_nework(img_batch,pre_attention_map,is_first_setup)
         print("final aggregated_feat.get_shape(): {}".format(attention_map_predicted.get_shape()))
 
 
@@ -402,9 +405,11 @@ class DeepLabLFOVModel(object):
         #init attention map
         init_attention_map = tf.ones(img_batch.get_shape()[0:3], tf.float32)
         print("init_attention_map shape: {}".format(init_attention_map.get_shape()))
-        main_loss_1,attention_loss_1, pre_upscaled_1, output_attention_map_1,attention_map_1_predicted,predict_3d_1 = self.RAU(img_batch, label_batch,init_attention_map)
-        main_loss_2,attention_loss_2, pre_upscaled_2, output_attention_map_2,attention_map_2_predicted,predict_3d_2 = self.RAU(img_batch, label_batch, output_attention_map_1)
-        main_loss_3,attention_loss_3, pre_upscaled_3, output_attention_map_3,attention_map_3_predicted,predict_3d_3= self.RAU(img_batch, label_batch, output_attention_map_2)
+        with tf.variable_scope("resusable_network") as scope:
+            main_loss_1,attention_loss_1, pre_upscaled_1, output_attention_map_1,attention_map_1_predicted,predict_3d_1 = self.RAU(img_batch, label_batch,init_attention_map,True)
+            scope.reuse_variables()
+            main_loss_2,attention_loss_2, pre_upscaled_2, output_attention_map_2,attention_map_2_predicted,predict_3d_2 = self.RAU(img_batch, label_batch, output_attention_map_1,False)
+            main_loss_3,attention_loss_3, pre_upscaled_3, output_attention_map_3,attention_map_3_predicted,predict_3d_3= self.RAU(img_batch, label_batch, output_attention_map_2,False)
 
 
         return main_loss_1,attention_loss_1, pre_upscaled_1, output_attention_map_1,attention_map_1_predicted,predict_3d_1,\
