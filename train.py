@@ -223,8 +223,11 @@ def main():
 
 
     # check the shape
-    print("begin shape check....")
+    print("global_variables shape check....")
     for v in tf.global_variables():
+        print("{}:  {}".format(v.name, v.get_shape()))
+    print("trainable_variables shape check....")
+    for v in tf.trainable_variables():
         print("{}:  {}".format(v.name, v.get_shape()))
 
     # don't need initiate "filter_of_attention_map"!!!
