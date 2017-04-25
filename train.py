@@ -118,8 +118,7 @@ def main():
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
     sess = tf.Session(config=config)
-    sess.run(tf.global_variables_initializer())
-    
+
     # Create queue coordinator.
     coord = tf.train.Coordinator()
     
@@ -236,8 +235,9 @@ def main():
                           u'aggregated_feat'.encode('utf-8') not in x.name.encode('utf-8')]
 
     # Saver for storing checkpoints of the model.
+    print("var_to_be_restored shape check....")
     for tmp in var_to_be_restored:
-        print("variable name: {},type: {}".format(tmp.name,type(tmp.name)))
+        print("variable name: {},shape: {}, type: {}".format(tmp.name,tmp.get_shape(),type(tmp.name)))
 
     readSaver = tf.train.Saver(var_list=var_to_be_restored, max_to_keep=40)
     writeSaver = tf.train.Saver( max_to_keep=40)
@@ -255,6 +255,8 @@ def main():
 
     if not os.path.exists(args.save_dir):
         os.makedirs(args.save_dir)
+
+    sess.run(tf.global_variables_initializer())
 
     # Iterate over training steps.
     for step in range(1,args.num_steps):

@@ -126,6 +126,7 @@ class DeepLabLFOVModel(object):
                             w_append = tf.get_variable(name="filter_of_attention_map", shape=[3, 3, 1, 64],
                                                        initializer=tf.contrib.layers.xavier_initializer())
                         else:
+
                             w_append = tf.get_variable(name="filter_of_attention_map")
 
                         w = tf.concat([w, w_append], 2)
