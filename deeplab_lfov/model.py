@@ -392,8 +392,8 @@ class DeepLabLFOVModel(object):
 
         # deal with aggregated feature map.
 
-        attention_loss = tf.losses.mean_squared_error(attention_map_gt,attention_map_predicted, name="attention_loss")
-        
+        attention_loss = tf.losses.mean_squared_error(attention_map_gt,attention_map_predicted)
+
         return main_loss,attention_loss,pre_upscaled_4d,attention_map_gt,attention_map_predicted,predict_3d
 
     
