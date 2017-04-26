@@ -107,7 +107,7 @@ class DeepLabLFOVModel(object):
         v_idx = 0 # Index variable.
         is_deal_first_layer = 0
 
-        aggregated_feat = tf.Variable(name="aggregated_feat", initial_value=[])
+        aggregated_feat = None
 
 
         # Last block is the classification layer.
@@ -206,7 +206,7 @@ class DeepLabLFOVModel(object):
         """
         #current = tf.concat([input_batch, attention_map], 3)
         current = input_batch
-        aggregated_feat = tf.Variable(name="aggregated_feat",initial_value=[])
+        aggregated_feat = None
 
         v_idx = 0  # Index variable.
         is_deal_first_layer = 0

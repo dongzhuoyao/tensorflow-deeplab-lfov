@@ -261,7 +261,7 @@ def main():
     if not os.path.exists(args.save_dir):
         os.makedirs(args.save_dir)
 
-    init_new_vars_op = tf.initialize_variables(uninitialized_vars)
+    init_new_vars_op = tf.variables_initializer(uninitialized_vars)
     sess.run(init_new_vars_op)
 
     summary_str = sess.run(merged_summary_op)
