@@ -139,7 +139,7 @@ def main():
     main_loss_3,attention_loss_3, pre_upscaled_3, output_attention_map_3 ,attention_map_3_predicted,predict_3d_3\
         = net.loss(image_batch, label_batch)
 
-    main_loss = (main_loss_1+main_loss_2+main_loss_3)
+    main_loss = main_loss_1
     attention_loss = attention_loss_1+attention_loss_2+attention_loss_3
     joint_loss = main_loss+attention_loss
 
