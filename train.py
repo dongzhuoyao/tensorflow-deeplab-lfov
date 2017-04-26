@@ -314,7 +314,7 @@ output_attention_map_2, main_loss_3, pre_upscaled_3, output_attention_map_3],fee
                 axes.flat[i * 3 + 2].imshow(decode_labels(preds_result_value[i, :, :, 0]))
             plt.savefig(args.save_dir + str(start_time) + ".png")
             plt.close(fig)
-            save(writeSaver, sess, args.snapshot_dir, step)
+            #save(writeSaver, sess, args.snapshot_dir, step)
 
         duration = time.time() - start_time
         print('step {:d} \t  ({:.3f} sec/step)'.format(step, duration))

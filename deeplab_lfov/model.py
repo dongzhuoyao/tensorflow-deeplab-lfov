@@ -194,7 +194,7 @@ class DeepLabLFOVModel(object):
         return current,aggregated_feat_2
 
 
-    def _create_attention_network(self, input_batch,attention_map, keep_prob):
+    def _create_attention_network(self, input_batch,attention_map,is_first_setup, keep_prob):
         """Construct DeepLab-LargeFOV network.
 
         Args:
@@ -206,7 +206,7 @@ class DeepLabLFOVModel(object):
         """
         #current = tf.concat([input_batch, attention_map], 3)
         current = input_batch
-        self.variables = self._create_variables(False)
+        self.variables = self._create_variables(is_first_setup)
         aggregated_feat = None
 
         v_idx = 0  # Index variable.
@@ -322,7 +322,7 @@ class DeepLabLFOVModel(object):
         with tf.variable_scope(tf.get_variable_scope()) as scope:
             tf.get_variable_scope().reuse_variables()
             #1,generate attention map
-            attention_map_1 = self._create_attention_network(img_batch, init_attention_map,keep_prob=tf.constant(1.0))
+            attention_map_1 = self._create_attention_network(img_batch, init_attention_map,False,keep_prob=tf.constant(1.0))
             #2,do prediction
             raw_output, aggregated_feat = self._create_reusable_nework(img_batch, attention_map_1,False)
 
