@@ -383,7 +383,7 @@ class DeepLabLFOVModel(object):
         # add exponential operation
         #attention_map_gt = tf.exp(attention_map_gt)
         # restore to original shape
-        attention_map_gt = tf.reshape(attention_map_gt, label_batch.get_shape()[0:3])
+        attention_map_gt = tf.reshape(attention_map_gt, img_batch.get_shape()[0:3])
         print("attention_map_gt shape: {}".format(attention_map_gt.get_shape()))
         attention_map_gt = tf.expand_dims(attention_map_gt, axis=3)
         print("attention_map_gt after expand_dims shape: {}".format(attention_map_gt.get_shape()))
