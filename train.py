@@ -32,7 +32,7 @@ LEARNING_RATE = 1e-4
 MEAN_IMG = tf.Variable(np.array((104.00698793,116.66876762,122.67891434)), trainable=False, dtype=tf.float32)
 NUM_STEPS = 20000000
 RANDOM_SCALE = True
-RESTORE_FROM = './deeplab_lfov.ckpt'
+RESTORE_FROM = './model.ckpt-pretrained'
 SAVE_DIR = './images/'
 SAVE_NUM_IMAGES = 4
 
@@ -74,9 +74,6 @@ def get_arguments():
                         help="Save figure with predictions and ground truth every often.")
     parser.add_argument("--snapshot_dir", type=str, default=SNAPSHOT_DIR,
                         help="Where to save snapshots of the model.")
-    parser.add_argument("--weights_path", type=str, default=WEIGHTS_PATH,
-                        help="Path to the file with caffemodel weights. "
-                             "If not set, all the variables are initialised randomly.")
 
     parser.add_argument("--summary_freq", type=int, default=SUMMARY_FREQ,
                         help="summary_freq"
@@ -133,7 +130,7 @@ def main():
         image_batch, label_batch = reader.dequeue(args.batch_size)
     
     # Create network.
-    net = DeepLabLFOVModel(args.weights_path)
+    net = DeepLabLFOVModel()
 
 
     # Define the loss and optimisation parameters.
@@ -156,7 +153,6 @@ def main():
     pred_result = net.preds(image_batch)
 
     def convert(image):
-
         return tf.image.convert_image_dtype(image, dtype=tf.uint8, saturate=True)
 
 
@@ -215,7 +211,7 @@ def main():
 
 
     merged_summary_op = tf.summary.merge(summary_list)
-    #merged_summary_op = tf.summary.merge_all()
+
 
     summary_writer = tf.summary.FileWriter(args.summay_dir, sess.graph)
 
@@ -257,6 +253,9 @@ def main():
         os.makedirs(args.save_dir)
 
     sess.run(tf.global_variables_initializer())
+
+    summary_str = sess.run(merged_summary_op)
+    summary_writer.add_summary(summary_str)
 
     # Iterate over training steps.
     for step in range(1,args.num_steps):

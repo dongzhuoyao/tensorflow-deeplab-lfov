@@ -28,21 +28,27 @@ n_classes = 21
 # padding is added so that the output of the same size as the input.
 ks = 3
 
-def create_variable(name, shape):
+def create_variable(name, shape,is_first_setup):
     """Create a convolution filter variable of the given name and shape,
        and initialise it using Xavier initialisation 
        (http://jmlr.org/proceedings/papers/v9/glorot10a/glorot10a.pdf).
     """
     initialiser = tf.contrib.layers.xavier_initializer_conv2d(dtype=tf.float32)
-    variable = tf.Variable(initialiser(shape=shape), name=name)
+    if is_first_setup:
+        variable = tf.get_variable(name=name,shape=shape,initializer=initialiser)
+    else:
+        variable = tf.get_variable(name=name)
     return variable
 
-def create_bias_variable(name, shape):
+def create_bias_variable(name, shape,is_first_setup):
     """Create a bias variable of the given name and shape,
        and initialise it to zero.
     """
     initialiser = tf.constant_initializer(value=0.0, dtype=tf.float32)
-    variable = tf.Variable(initialiser(shape=shape), name=name)
+    if is_first_setup:
+        variable = tf.get_variable(name=name,shape=shape,initializer=initialiser)
+    else:
+        variable = tf.get_variable(name=name)
     return variable
 
 class DeepLabLFOVModel(object):
@@ -53,47 +59,33 @@ class DeepLabLFOVModel(object):
     there for details.
     """
     
-    def __init__(self, weights_path=None):
+    def __init__(self):
         """Create the model.
         
         Args:
           weights_path: the path to the cpkt file with dictionary of weights from .caffemodel.
         """
-        self.variables = self._create_variables(weights_path)
+
         
-    def _create_variables(self, weights_path):
+    def _create_variables(self,is_first_setup):
         """Create all variables used by the network.
         This allows to share them between multiple calls 
         to the loss function.
         
-        Args:
-          weights_path: the path to the ckpt file with dictionary of weights from .caffemodel. 
-                        If none, initialise all variables randomly.
-        
         Returns:
-          A dictionary with all variables.
+          A list with all variables.
         """
         var = list()
-        index = 0
-        
-        if weights_path is not None:
-            with open(weights_path, "rb") as f:
-                weights = cPickle.load(f) # Load pre-trained weights.
-                for name, shape in net_skeleton:
-                    var.append(tf.Variable(weights[name],
-                                           name=name))
-                del weights
-        else:
-            # Initialise all weights randomly with the Xavier scheme,
-            # and 
-            # all biases to 0's.
-            for name, shape in net_skeleton:
-                if "/w" in name: # Weight filter.
-                    w = create_variable(name, list(shape))
-                    var.append(w)
-                else:
-                    b = create_bias_variable(name, list(shape))
-                    var.append(b)
+        # Initialise all weights randomly with the Xavier scheme,
+        # and
+        # all biases to 0's.
+        for name, shape in net_skeleton:
+            if "/w" in name: # Weight filter.
+                w = create_variable(name, list(shape),is_first_setup)
+                var.append(w)
+            else:
+                b = create_bias_variable(name, list(shape),is_first_setup)
+                var.append(b)
         return var
     
     
@@ -107,6 +99,8 @@ class DeepLabLFOVModel(object):
         Returns:
           A downsampled segmentation mask. 
         """
+        self.variables = self._create_variables(is_first_setup)
+
         current = tf.concat([input_batch, attention_map], 3)
         
         v_idx = 0 # Index variable.
@@ -320,12 +314,14 @@ class DeepLabLFOVModel(object):
         init_attention_map = tf.ones(img_batch.get_shape()[0:3], tf.float32)
         init_attention_map = tf.expand_dims(init_attention_map, dim=3)
         print("init_attention_map shape: {}".format(init_attention_map.get_shape()))
-        with tf.variable_scope("resusable_network") as scope:
-            scope.reuse_variables()
+
+        with tf.variable_scope(tf.get_variable_scope()) as scope:
+            tf.get_variable_scope().reuse_variables()
             #1,generate attention map
             attention_map_1 = self._create_attention_network(img_batch, init_attention_map,keep_prob=tf.constant(1.0))
             #2,do prediction
             raw_output, aggregated_feat = self._create_reusable_nework(img_batch, attention_map_1,False)
+
         pre_upscaled_4d = tf.image.resize_bilinear(raw_output, tf.shape(img_batch)[1:3, ])
         pre_upscaled_4d = tf.argmax(pre_upscaled_4d, dimension=3)
         pre_upscaled_4d = tf.expand_dims(pre_upscaled_4d, dim=3)  # from 3-D to 4-D
@@ -411,9 +407,9 @@ class DeepLabLFOVModel(object):
         init_attention_map = tf.zeros(img_batch.get_shape()[0:3], tf.float32)
         init_attention_map = tf.expand_dims(init_attention_map, dim=3)
         print("init_attention_map shape: {}".format(init_attention_map.get_shape()))
-        with tf.variable_scope("resusable_network") as scope:
+        with tf.variable_scope(tf.get_variable_scope()) as scope:
             main_loss_1,attention_loss_1, pre_upscaled_1, output_attention_map_1,attention_map_1_predicted,predict_3d_1 = self.RAU(img_batch, label_batch,init_attention_map,True)
-            scope.reuse_variables()
+            tf.get_variable_scope().reuse_variables()
             main_loss_2,attention_loss_2, pre_upscaled_2, output_attention_map_2,attention_map_2_predicted,predict_3d_2 = self.RAU(img_batch, label_batch, output_attention_map_1,False)
             main_loss_3,attention_loss_3, pre_upscaled_3, output_attention_map_3,attention_map_3_predicted,predict_3d_3= self.RAU(img_batch, label_batch, output_attention_map_2,False)
 

@@ -19,3 +19,5 @@ with tf.Session() as sess:
     print(sess.run(var21))  # [ 2.0999999]
     print(var22.name)       # a_name_scope/var2_2:0
     print(sess.run(var22))  # [ 2.20000005]
+    for v in tf.trainable_variables():
+        print("{}:  {}".format(v.name, v.get_shape()))
