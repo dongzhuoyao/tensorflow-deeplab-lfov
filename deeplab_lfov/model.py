@@ -378,23 +378,22 @@ class DeepLabLFOVModel(object):
         print "attention_map size: {}".format(attention_map_gt.get_shape())
 
         # flatten it in order to do softmax
-        attention_map_gt = tf.reshape(attention_map_gt, [1, -1])
-        attention_map_gt = tf.nn.softmax(attention_map_gt)
+        #attention_map_gt = tf.reshape(attention_map_gt, [1, -1])
+        #attention_map_gt = tf.nn.softmax(attention_map_gt)
         # add exponential operation
         #attention_map_gt = tf.exp(attention_map_gt)
         # restore to original shape
-        attention_map_gt = tf.reshape(attention_map_gt, img_batch.get_shape()[0:3])
+        #attention_map_gt = tf.reshape(attention_map_gt, img_batch.get_shape()[0:3])
         print("attention_map_gt shape: {}".format(attention_map_gt.get_shape()))
-        attention_map_gt = tf.expand_dims(attention_map_gt, axis=3)
-        print("attention_map_gt after expand_dims shape: {}".format(attention_map_gt.get_shape()))
+        #attention_map_gt = tf.expand_dims(attention_map_gt, axis=3)
+        #print("attention_map_gt after expand_dims shape: {}".format(attention_map_gt.get_shape()))
         attention_map_gt = tf.image.resize_bilinear(attention_map_gt, tf.shape(img_batch)[1:3, ])
         print("attention_map_gt after resize shape: {}".format(attention_map_gt.get_shape()))
 
         # deal with aggregated feature map.
 
-        attention_loss = tf.nn.l2_loss(attention_map_predicted - attention_map_gt, name="attention_loss")
-        attention_loss = tf.reduce_mean(attention_loss)
-
+        attention_loss = tf.losses.mean_squared_error(attention_map_gt,attention_map_predicted, name="attention_loss")
+        
         return main_loss,attention_loss,pre_upscaled_4d,attention_map_gt,attention_map_predicted,predict_3d
 
     
