@@ -141,13 +141,12 @@ def main():
 
     main_loss = main_loss_1+main_loss_2+main_loss_3
     attention_loss = attention_loss_1+attention_loss_2+attention_loss_3
-    joint_loss = main_loss+attention_loss
 
     learning_rate = tf.placeholder(tf.float32, shape=[])
     att_learning_rate = tf.placeholder(tf.float32, shape=[])
     trainable = tf.trainable_variables()
 
-    optim = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9).minimize(joint_loss, var_list=trainable)
+    optim = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9).minimize(main_loss, var_list=trainable)
     att_optim = tf.train.MomentumOptimizer(learning_rate=att_learning_rate, momentum=0.9).minimize(attention_loss,var_list=trainable)
 
     pred_result = net.preds(image_batch)
@@ -185,7 +184,6 @@ def main():
 
     #summary
     with tf.name_scope("loss_summary"):
-        summary_list.append(tf.summary.scalar("joint_loss",joint_loss))
         summary_list.append(tf.summary.scalar("main_loss", main_loss))
         summary_list.append(tf.summary.scalar("attention_loss", attention_loss))
         summary_list.append(tf.summary.scalar("loss_1", main_loss_1))
@@ -280,7 +278,7 @@ def main():
         start_time = time.time()
 
         # get learning rate
-        lr_scale = math.floor(step / 4000);
+        lr_scale = math.floor(step / 2000);
         cur_lr = args.learning_rate / math.pow(2, lr_scale)
         print("current learning rate: {}".format(cur_lr))
 
