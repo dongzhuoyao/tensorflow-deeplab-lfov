@@ -218,10 +218,10 @@ def main():
 
 
     # check the shape
-    print("global_variables shape check....")
+    print("====global_variables shape check====")
     for v in tf.global_variables():
         print("{}:  {}".format(v.name, v.get_shape()))
-    print("trainable_variables shape check....")
+    print("====trainable_variables shape check====")
     for v in tf.trainable_variables():
         print("{}:  {}".format(v.name, v.get_shape()))
 
@@ -230,10 +230,19 @@ def main():
     var_to_be_restored = [x for x in var_to_be_restored if
                           u'aggregated_feat'.encode('utf-8') not in x.name.encode('utf-8')]
 
+    uninitialized_vars =[]
+    uninitialized_vars.extend([x for x in trainable if u'filter_of_attention_map'.encode('utf-8')  in x.name.encode('utf-8')])
+    uninitialized_vars.extend([x for x in trainable if u'aggregated_feat'.encode('utf-8')  in x.name.encode('utf-8')])
+
     # Saver for storing checkpoints of the model.
-    print("var_to_be_restored shape check....")
+    print("====var_to_be_restored shape check====")
     for tmp in var_to_be_restored:
         print("variable name: {},shape: {}, type: {}".format(tmp.name,tmp.get_shape(),type(tmp.name)))
+
+    # Saver for storing checkpoints of the model.
+    print("====uninitialized_vars shape check====")
+    for tmp in uninitialized_vars:
+        print("variable name: {},shape: {}, type: {}".format(tmp.name, tmp.get_shape(), type(tmp.name)))
 
     readSaver = tf.train.Saver(var_list=var_to_be_restored, max_to_keep=40)
     writeSaver = tf.train.Saver( max_to_keep=40)
@@ -252,7 +261,8 @@ def main():
     if not os.path.exists(args.save_dir):
         os.makedirs(args.save_dir)
 
-    sess.run(tf.global_variables_initializer())
+    init_new_vars_op = tf.initialize_variables(uninitialized_vars)
+    sess.run(init_new_vars_op)
 
     summary_str = sess.run(merged_summary_op)
     summary_writer.add_summary(summary_str)
