@@ -230,7 +230,7 @@ def main():
     var_to_be_restored = [x for x in var_to_be_restored if u'aggregated_feat' not in x.name]
 
     uninitialized_vars =[]
-    uninitialized_vars.extend([x for x in tf.global_variables() if u'filter_of_attention_map' == x.name])
+    uninitialized_vars.extend([x for x in tf.global_variables() if u'filter_of_attention_map' in x.name])
     uninitialized_vars.extend([x for x in tf.global_variables() if u'aggregated_feat' in  x.name])
     uninitialized_vars.extend([x for x in tf.global_variables() if u'Variable' in x.name])
     uninitialized_vars.extend([x for x in tf.global_variables() if u'Momentum' in x.name])
@@ -263,6 +263,8 @@ def main():
     init_flag = sess.run(
         tf.stack([tf.is_variable_initialized(v) for v in tf.global_variables()]))
     for v, flag in zip(tf.global_variables(), init_flag):
+        if not flag:
+            print ("====warning====")
         print("name: {},  shape: {}, is_variable_initialized:{}".format(v.name, v.get_shape(), flag))
 
     with tf.name_scope("parameter_count"):
