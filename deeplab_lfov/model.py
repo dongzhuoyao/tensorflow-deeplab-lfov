@@ -206,6 +206,7 @@ class DeepLabLFOVModel(object):
         """
         #current = tf.concat([input_batch, attention_map], 3)
         current = input_batch
+        self.variables = self._create_variables(False)
         aggregated_feat = None
 
         v_idx = 0  # Index variable.
