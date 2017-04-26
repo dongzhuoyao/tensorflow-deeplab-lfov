@@ -2,6 +2,9 @@ import tensorflow as tf
 
 import tensorflow as tf
 
+tt = u'12345'
+if u'123' in tt:
+    print ("ok")
 
 var2 = tf.Variable(name='var2', initial_value=[2], dtype=tf.float32)
 var21 = tf.Variable(name='var2', initial_value=[2.1], dtype=tf.float32)

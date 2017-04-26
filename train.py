@@ -226,13 +226,14 @@ def main():
         print("{}:  {}".format(v.name, v.get_shape()))
 
     # don't need initiate "filter_of_attention_map"!!!
-    var_to_be_restored =  [x for x in trainable if u'filter_of_attention_map'.encode('utf-8') not in x.name.encode('utf-8')]
-    var_to_be_restored = [x for x in var_to_be_restored if
-                          u'aggregated_feat'.encode('utf-8') not in x.name.encode('utf-8')]
+    var_to_be_restored =  [x for x in trainable if u'filter_of_attention_map' not in x.name]
+    var_to_be_restored = [x for x in var_to_be_restored if u'aggregated_feat' not in x.name]
 
     uninitialized_vars =[]
-    uninitialized_vars.extend([x for x in trainable if u'filter_of_attention_map'.encode('utf-8')  in x.name.encode('utf-8')])
-    uninitialized_vars.extend([x for x in trainable if u'aggregated_feat'.encode('utf-8')  in x.name.encode('utf-8')])
+    uninitialized_vars.extend([x for x in tf.global_variables() if u'filter_of_attention_map' == x.name])
+    uninitialized_vars.extend([x for x in tf.global_variables() if u'aggregated_feat' in  x.name])
+    uninitialized_vars.extend([x for x in tf.global_variables() if u'Variable' in x.name])
+    uninitialized_vars.extend([x for x in tf.global_variables() if u'Momentum' in x.name])
 
     # Saver for storing checkpoints of the model.
     print("====var_to_be_restored shape check====")
@@ -244,16 +245,10 @@ def main():
     for tmp in uninitialized_vars:
         print("variable name: {},shape: {}, type: {}".format(tmp.name, tmp.get_shape(), type(tmp.name)))
 
-    readSaver = tf.train.Saver(var_list=var_to_be_restored, max_to_keep=40)
+    readSaver = tf.train.Saver(var_list=var_to_be_restored)
     writeSaver = tf.train.Saver( max_to_keep=40)
     if args.restore_from is not None:
        load(readSaver, sess, args.restore_from)
-
-
-    with tf.name_scope("parameter_count"):
-        parameter_count = tf.reduce_sum([tf.reduce_prod(tf.shape(v)) for v in tf.trainable_variables()])
-
-    print("parameter_count =", sess.run(parameter_count))
 
     # Start queue threads.
     threads = tf.train.start_queue_runners(coord=coord, sess=sess)
@@ -263,6 +258,17 @@ def main():
 
     init_new_vars_op = tf.variables_initializer(uninitialized_vars)
     sess.run(init_new_vars_op)
+
+    print("====varaible initialize status check====")
+    init_flag = sess.run(
+        tf.stack([tf.is_variable_initialized(v) for v in tf.global_variables()]))
+    for v, flag in zip(tf.global_variables(), init_flag):
+        print("name: {},  shape: {}, is_variable_initialized:{}".format(v.name, v.get_shape(), flag))
+
+    with tf.name_scope("parameter_count"):
+        parameter_count = tf.reduce_sum([tf.reduce_prod(tf.shape(v)) for v in tf.trainable_variables()])
+
+    print("parameter_count =", sess.run(parameter_count))
 
     summary_str = sess.run(merged_summary_op)
     summary_writer.add_summary(summary_str)
