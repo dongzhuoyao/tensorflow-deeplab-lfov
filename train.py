@@ -287,10 +287,10 @@ def main():
         print("current learning rate: {}".format(cur_lr))
 
 
-        _,_attention_loss,_attention_loss_1,_attention_loss_2,_attention_loss_3,_main_loss,\
+        _,_att_optim,_attention_loss,_attention_loss_1,_attention_loss_2,_attention_loss_3,_main_loss,\
         _main_loss_1, _pre_upscaled_1, _output_attention_map_1,\
         _main_loss_2, _pre_upscaled_2,_output_attention_map_2,\
-        _main_loss_3, _pre_upscaled_3, _output_attention_map_3 = sess.run([train_tf_style,attention_loss,attention_loss_1,attention_loss_2,attention_loss_3,main_loss,main_loss_1, pre_upscaled_1, output_attention_map_1, main_loss_2, pre_upscaled_2,\
+        _main_loss_3, _pre_upscaled_3, _output_attention_map_3 = sess.run([train_tf_style,att_optim,attention_loss,attention_loss_1,attention_loss_2,attention_loss_3,main_loss,main_loss_1, pre_upscaled_1, output_attention_map_1, main_loss_2, pre_upscaled_2,\
 output_attention_map_2, main_loss_3, pre_upscaled_3, output_attention_map_3],feed_dict={learning_rate:cur_lr})
 
         print('step {:d}, main_loss: {:.3f}, loss 1: {:.3f}, loss 2: {:.3f}, loss 3: {:.3f}'.format(step,_main_loss,_main_loss_1,_main_loss_2,_main_loss_3))
