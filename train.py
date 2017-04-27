@@ -146,8 +146,12 @@ def main():
     att_learning_rate = tf.placeholder(tf.float32, shape=[])
     trainable = tf.trainable_variables()
 
-    optim = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9).minimize(main_loss, var_list=trainable)
+    #optim = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9).minimize(main_loss, var_list=trainable)
+    optim = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9)
     att_optim = tf.train.MomentumOptimizer(learning_rate=att_learning_rate, momentum=0.9).minimize(attention_loss,var_list=trainable)
+
+    grads_and_vars_tf_style = optim.compute_gradients(main_loss, tf.trainable_variables())
+    train_tf_style = optim.apply_gradients(grads_and_vars_tf_style)
 
     pred_result = net.preds(image_batch)
 
@@ -283,10 +287,10 @@ def main():
         print("current learning rate: {}".format(cur_lr))
 
 
-        _attention_loss,_attention_loss_1,_attention_loss_2,_attention_loss_3,_main_loss,\
+        _,_attention_loss,_attention_loss_1,_attention_loss_2,_attention_loss_3,_main_loss,\
         _main_loss_1, _pre_upscaled_1, _output_attention_map_1,\
         _main_loss_2, _pre_upscaled_2,_output_attention_map_2,\
-        _main_loss_3, _pre_upscaled_3, _output_attention_map_3 = sess.run([attention_loss,attention_loss_1,attention_loss_2,attention_loss_3,main_loss,main_loss_1, pre_upscaled_1, output_attention_map_1, main_loss_2, pre_upscaled_2,\
+        _main_loss_3, _pre_upscaled_3, _output_attention_map_3 = sess.run([train_tf_style,attention_loss,attention_loss_1,attention_loss_2,attention_loss_3,main_loss,main_loss_1, pre_upscaled_1, output_attention_map_1, main_loss_2, pre_upscaled_2,\
 output_attention_map_2, main_loss_3, pre_upscaled_3, output_attention_map_3],feed_dict={learning_rate:cur_lr})
 
         print('step {:d}, main_loss: {:.3f}, loss 1: {:.3f}, loss 2: {:.3f}, loss 3: {:.3f}'.format(step,_main_loss,_main_loss_1,_main_loss_2,_main_loss_3))
