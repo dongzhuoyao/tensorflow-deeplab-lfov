@@ -407,7 +407,7 @@ class DeepLabLFOVModel(object):
           Pixel-wise softmax loss.
         """
         #init attention map
-        init_attention_map = tf.zeros(img_batch.get_shape()[0:3], tf.float32)
+        init_attention_map = tf.ones(img_batch.get_shape()[0:3], tf.float32)
         init_attention_map = tf.expand_dims(init_attention_map, dim=3)
         print("init_attention_map shape: {}".format(init_attention_map.get_shape()))
         with tf.variable_scope(tf.get_variable_scope()) as scope:
