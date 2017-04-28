@@ -101,8 +101,8 @@ class DeepLabLFOVModel(object):
         """
         self.variables = self._create_variables(is_first_setup)
 
-        current = tf.concat([input_batch, attention_map], 3)
-        #current = input_batch
+        #current = tf.concat([input_batch, attention_map], 3)
+        current = input_batch
         
         v_idx = 0 # Index variable.
         is_deal_first_layer = 0
@@ -116,7 +116,7 @@ class DeepLabLFOVModel(object):
             for l_idx, dilation in enumerate(dilations[b_idx]):
                     w = self.variables[v_idx * 2]
                     b = self.variables[v_idx * 2 + 1]
-
+                    '''
                     if not is_deal_first_layer:
                         if is_first_setup:
                             w_append = tf.get_variable(name="filter_of_attention_map", shape=[3, 3, 1, 64],
@@ -126,7 +126,8 @@ class DeepLabLFOVModel(object):
 
                         w = tf.concat([w, w_append], 2)
                         is_deal_first_layer = 1
-
+                    '''
+                    
                     if dilation == 1:
                         conv = tf.nn.conv2d(current, w, strides=[1, 1, 1, 1], padding='SAME')
                     else:
@@ -204,8 +205,8 @@ class DeepLabLFOVModel(object):
         Returns:
           A downsampled segmentation mask.
         """
-        current = tf.concat([input_batch, attention_map], 3)
-        #current = input_batch
+        #current = tf.concat([input_batch, attention_map], 3)
+        current = input_batch
         self.variables = self._create_variables(is_first_setup)
         aggregated_feat = None
 
@@ -218,11 +219,12 @@ class DeepLabLFOVModel(object):
             for l_idx, dilation in enumerate(dilations[b_idx]):
                     w = self.variables[v_idx * 2]
                     b = self.variables[v_idx * 2 + 1]
-
+                    '''
                     if not is_deal_first_layer:
                         w_append = tf.get_variable(name="filter_of_attention_map")
                         w = tf.concat([w, w_append], 2)
                         is_deal_first_layer = 1
+                    '''
 
                     if dilation == 1:
                         conv = tf.nn.conv2d(current, w, strides=[1, 1, 1, 1], padding='SAME')
