@@ -209,6 +209,9 @@ def main():
     var_to_be_trained.extend([x for x in tf.global_variables() if u'conv4' not in x.name])
     var_to_be_trained.extend([x for x in tf.global_variables() if u'aggregated_feat' not in x.name])
 
+    print("====trainable_variables shape check====")
+    for v in var_to_be_trained:
+        print("{}:  {}".format(v.name, v.get_shape()))
     optim = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9).minimize(main_loss,
                                                                                            var_list=var_to_be_trained)
 
@@ -216,9 +219,7 @@ def main():
     print("====global_variables shape check====")
     for v in tf.global_variables():
         print("{}:  {}".format(v.name, v.get_shape()))
-    print("====trainable_variables shape check====")
-    for v in tf.trainable_variables():
-        print("{}:  {}".format(v.name, v.get_shape()))
+
 
     # don't need initiate "filter_of_attention_map"!!!
     var_to_be_restored =  [x for x in trainable if u'filter_of_attention_map' not in x.name]
