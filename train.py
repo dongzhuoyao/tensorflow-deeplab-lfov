@@ -24,7 +24,7 @@ import numpy as np
 from deeplab_lfov import DeepLabLFOVModel, ImageReader, decode_labels
 from deeplab_lfov.utils_from_resnet import decode_labels_by_batch,inv_preprocess,single_channel_process,attention_map_process
 
-BATCH_SIZE = 4
+BATCH_SIZE = 16
 DATA_DIRECTORY = '/home/VOCdevkit'
 DATA_LIST_PATH = './dataset/train.txt'
 INPUT_SIZE = '321,321'
