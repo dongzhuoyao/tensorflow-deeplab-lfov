@@ -191,8 +191,19 @@ class DeepLabLFOVModel(object):
         aggregated_feat_1 = tf.nn.conv2d(aggregated_feat, att_w, strides=[1, 1, 1, 1], padding='SAME')
         aggregated_feat_2 = tf.nn.relu(tf.nn.bias_add(aggregated_feat_1, att_b))
 
+        #rescale to 0-1
+        aggregated_feat_3 = tf.div(
+            tf.sub(
+                aggregated_feat_2,
+                tf.reduce_min(aggregated_feat_2)
+            ),
+            tf.sub(
+                tf.reduce_max(aggregated_feat_2),
+                tf.reduce_min(aggregated_feat_2)
+            )
+        )
 
-        return current,aggregated_feat_2
+        return current,aggregated_feat_3
 
 
     def _create_attention_network(self, input_batch,attention_map,is_first_setup, keep_prob):
