@@ -193,11 +193,11 @@ class DeepLabLFOVModel(object):
 
         #rescale to 0-1
         aggregated_feat_3 = tf.div(
-            tf.sub(
+            tf.subtract(
                 aggregated_feat_2,
                 tf.reduce_min(aggregated_feat_2)
             ),
-            tf.sub(
+            tf.subtract(
                 tf.reduce_max(aggregated_feat_2),
                 tf.reduce_min(aggregated_feat_2)
             )
