@@ -146,9 +146,17 @@ def main():
     att_learning_rate = tf.placeholder(tf.float32, shape=[])
     trainable = tf.trainable_variables()
 
+    frozen_trainalbe = [u'conv1',u'conv2',u'conv3',u'conv4']
+    final_trainable = trainable
+    for f in frozen_trainalbe:
+        final_trainable = [x for x in final_trainable if f not in x.name]
+    print("====final_trainable shape check====")
+    for v in final_trainable:
+        print("{}:  {}".format(v.name, v.get_shape()))
+
     #optim = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9).minimize(main_loss, var_list=trainable)
     optim = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9)
-    att_optim = tf.train.MomentumOptimizer(learning_rate=att_learning_rate, momentum=0.9).minimize(attention_loss,var_list=trainable)
+    att_optim = tf.train.MomentumOptimizer(learning_rate=att_learning_rate, momentum=0.9).minimize(attention_loss,var_list=final_trainable)
 
     grads_and_vars_tf_style = optim.compute_gradients(main_loss, tf.trainable_variables())
     train_tf_style = optim.apply_gradients(grads_and_vars_tf_style)

@@ -127,7 +127,7 @@ class DeepLabLFOVModel(object):
                         w = tf.concat([w, w_append], 2)
                         is_deal_first_layer = 1
                     '''
-                    
+
                     if dilation == 1:
                         conv = tf.nn.conv2d(current, w, strides=[1, 1, 1, 1], padding='SAME')
                     else:
