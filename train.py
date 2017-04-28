@@ -223,6 +223,8 @@ def main():
     # don't need initiate "filter_of_attention_map"!!!
     var_to_be_restored =  [x for x in trainable if u'filter_of_attention_map' not in x.name]
     var_to_be_restored = [x for x in var_to_be_restored if u'aggregated_feat' not in x.name]
+    var_to_be_restored = [x for x in var_to_be_restored if u'fc6_layer_extra' not in x.name]
+
 
     uninitialized_vars =[]
     uninitialized_vars.extend([x for x in tf.global_variables() if u'filter_of_attention_map' in x.name])
