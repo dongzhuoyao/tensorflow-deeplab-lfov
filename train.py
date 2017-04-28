@@ -231,6 +231,8 @@ def main():
     uninitialized_vars.extend([x for x in tf.global_variables() if u'aggregated_feat' in  x.name])
     uninitialized_vars.extend([x for x in tf.global_variables() if u'Variable' in x.name])
     uninitialized_vars.extend([x for x in tf.global_variables() if u'Momentum' in x.name])
+    uninitialized_vars.extend([x for x in tf.global_variables() if u'fc6_layer_extra' in x.name])
+
 
     # Saver for storing checkpoints of the model.
     print("====var_to_be_restored shape check====")
