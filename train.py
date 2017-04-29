@@ -32,13 +32,13 @@ DATA_LIST_PATH = './dataset/train.txt'
 INPUT_SIZE = '321,321'
 LEARNING_RATE = 1e-4
 MEAN_IMG = tf.Variable(np.array((104.00698793,116.66876762,122.67891434)), trainable=False, dtype=tf.float32)
-NUM_STEPS = 20000
+NUM_STEPS = 20000000
 RANDOM_SCALE = True
 RESTORE_FROM = './deeplab_lfov.ckpt'
 SAVE_DIR = './images/'
 SAVE_NUM_IMAGES = 2
 SAVE_PRED_EVERY = 500
-SUMMARY_FREQ = 100
+SUMMARY_FREQ = 50
 
 SNAPSHOT_DIR = './snapshots/'
 WEIGHTS_PATH   = None
@@ -166,6 +166,7 @@ def main():
     labels_summary = tf.py_func(decode_labels_by_batch, [label_batch, SAVE_NUM_IMAGES], tf.uint8)
 
     gt_att_summary = tf.py_func(single_channel_process, [cam_gt, SAVE_NUM_IMAGES], tf.uint8)
+    gt_att_summary = tf.py_func(single_channel_process, [cam_gt, SAVE_NUM_IMAGES], tf.uint8)
     predicted_att_summary = tf.py_func(single_channel_process, [cam_pre, SAVE_NUM_IMAGES], tf.uint8)
     confidence_summay = tf.py_func(single_channel_process, [confidence_map, SAVE_NUM_IMAGES], tf.uint8)
 
@@ -204,9 +205,10 @@ def main():
     summary_writer = tf.summary.FileWriter(args.summay_dir, sess.graph)
     
     # Saver for storing checkpoints of the model.
-    saver = tf.train.Saver(var_list=recover_variables, max_to_keep=40)
+    readSaver = tf.train.Saver(var_list=recover_variables, max_to_keep=40)
+    writeSaver = tf.train.Saver(max_to_keep=20)
     if args.restore_from is not None:
-        load(saver, sess, args.restore_from)
+        load(readSaver, sess, args.restore_from)
     
     # Start queue threads.
     threads = tf.train.start_queue_runners(coord=coord, sess=sess)
@@ -218,14 +220,14 @@ def main():
     for step in range(args.num_steps):
         start_time = time.time()
         #get learning rate
-        lr_scale = math.floor(step/2000);
+        lr_scale = math.floor(step/3000);
         cur_lr = args.learning_rate/math.pow(10,lr_scale)
         print ("current learning rate: {}".format(cur_lr))
 
         loss_value, _ = sess.run([hed_total_cost, optim],feed_dict={learning_rate: cur_lr})
 
         if step % args.save_pred_every == 0:
-            save(saver, sess, args.snapshot_dir, step)
+            save(writeSaver, sess, args.snapshot_dir, step)
         if step % args.summary_freq == 0:
             print("write summay...")
             # generate summary for tensorboard
@@ -233,7 +235,7 @@ def main():
             summary_writer.add_summary(summary_str, step)
 
         duration = time.time() - start_time
-        print('step {:d} \t loss = {:.3f}, ({:.3f} sec/step)'.format(step, loss_value, duration))
+        print('step {:d} \t loss = {:.5f}, ({:.5f} sec/step)'.format(step, loss_value, duration))
     coord.request_stop()
     coord.join(threads)
     

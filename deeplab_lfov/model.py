@@ -246,7 +246,8 @@ class DeepLabLFOVModel(object):
         """
         raw_output,hed_predict_list = self._create_network(tf.cast(img_batch, tf.float32), keep_prob=tf.constant(0.5))
         prediction = tf.reshape(raw_output, [-1, n_classes])
-        
+
+        org_label_batch = label_batch
         # Need to resize labels and convert using one-hot encoding.
         label_batch = self.prepare_label(label_batch, tf.stack(raw_output.get_shape()[1:3]))
         gt = tf.reshape(label_batch, [-1, n_classes])
@@ -260,20 +261,21 @@ class DeepLabLFOVModel(object):
 
         #calculate confusion attention map
 
-        gt_upscaled = tf.image.resize_bilinear(label_batch, tf.shape(img_batch)[1:3, ])
-        gt_upscaled = tf.argmax(gt_upscaled, dimension=3)
-        gt_upscaled = tf.expand_dims(gt_upscaled, dim=3)  # from 3-D to 4-D
-        gt_upscaled = tf.cast(gt_upscaled, tf.float32)
+        gt_4d_label = org_label_batch
+        gt_4d_label = tf.cast(gt_4d_label, tf.uint8)
 
         predict_4d = tf.image.resize_bilinear(raw_output, tf.shape(img_batch)[1:3, ])
         predict_4d = tf.nn.softmax(predict_4d)
-        predict_3d = confidence_map =  tf.reduce_max(predict_4d, keep_dims=True, axis=3)
-        predict_3d_inverse = tf.subtract(tf.constant(1.0), predict_3d)
+        predict_4d_label = tf.expand_dims(tf.argmax(predict_4d, dimension=3),dim=3)
+        predict_4d_label = tf.cast(predict_4d_label, tf.uint8)
 
-        att_3d = tf.cast(tf.not_equal(gt_upscaled, predict_3d), tf.float32)
-        att_3d_inverse = tf.cast(tf.equal(gt_upscaled, predict_3d), tf.float32)
+        predict_4d_pro = confidence_map =  tf.reduce_max(predict_4d, keep_dims=True, axis=3)
+        predict_4d_pro_inverse = tf.subtract(tf.constant(1.0), predict_4d_pro)
 
-        attention_map_gt = tf.add(tf.multiply(predict_3d, att_3d), tf.multiply(predict_3d_inverse, att_3d_inverse))
+        att_4d = tf.cast(tf.not_equal(gt_4d_label, predict_4d_label), tf.float32)
+        att_4d_inverse = tf.cast(tf.equal(gt_4d_label, predict_4d_label), tf.float32)
+
+        attention_map_gt = tf.add(tf.multiply(predict_4d_pro, att_4d), tf.multiply(predict_4d_pro_inverse, att_4d_inverse))
 
 
         #confusion attention map loss
