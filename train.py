@@ -15,6 +15,7 @@ from datetime import datetime
 import os
 import sys
 import time
+from deeplab_lfov.utils_from_resnet import decode_labels_by_batch,inv_preprocess,single_channel_process,attention_map_process
 
 import matplotlib
 matplotlib.use('Agg')
@@ -37,6 +38,8 @@ RESTORE_FROM = './deeplab_lfov.ckpt'
 SAVE_DIR = './images/'
 SAVE_NUM_IMAGES = 2
 SAVE_PRED_EVERY = 500
+SUMMARY_FREQ = 100
+
 SNAPSHOT_DIR = './snapshots/'
 WEIGHTS_PATH   = None
 
@@ -74,6 +77,12 @@ def get_arguments():
     parser.add_argument("--weights_path", type=str, default=WEIGHTS_PATH,
                         help="Path to the file with caffemodel weights. "
                              "If not set, all the variables are initialised randomly.")
+
+    parser.add_argument("--summary_freq", type=int, default=SUMMARY_FREQ,
+                        help="summary_freq"
+                             "summary_freq")
+    parser.add_argument("--summay_dir", type=str, default="./summary",
+                        help="logs")
     return parser.parse_args()
 
 def save(saver, sess, logdir, step):
@@ -120,15 +129,71 @@ def main():
     # Create network.
     net = DeepLabLFOVModel(args.weights_path)
 
+
+
+
+
     # Define the loss and optimisation parameters.
-    loss = net.loss(image_batch, label_batch,weight_decay=0.05)
+    with tf.variable_scope(tf.get_variable_scope()) as scope:
+        _,hed_total_cost,cam_pre,cam_gt,confidence_map = net.loss(image_batch, label_batch,weight_decay=0.05)
     learning_rate = tf.placeholder(tf.float32, shape=[])
     optimiser = tf.train.MomentumOptimizer(learning_rate=learning_rate,momentum=0.9)
-    trainable = tf.trainable_variables()
-    optim = optimiser.minimize(loss, var_list=trainable)
-    
-    pred = net.preds(image_batch)
-    
+
+    print("====global variable shape check====")
+    for v in tf.global_variables():
+        print("{}:  {}".format(v.name, v.get_shape()))
+
+    frozen_trainalbe = [u'conv1', u'conv2', u'conv3', u'conv4', u'conv5', u'fc6', u'fc7', u'fc8']
+    final_trainable = tf.global_variables()
+    for f in frozen_trainalbe:
+        final_trainable = [x for x in final_trainable if f not in x.name]
+    print("====trainable shape check====")
+    for v in final_trainable:
+        print("{}:  {}".format(v.name, v.get_shape()))
+
+    frozen_trainalbe = [u'conv1', u'conv2', u'conv3', u'conv4', u'conv5', u'fc6', u'fc7', u'fc8']
+    recover_variables = []
+    for f in frozen_trainalbe:
+        recover_variables.extend([x for x in tf.global_variables() if f in x.name])
+    print("====recover_variables shape check====")
+    for v in recover_variables:
+        print("{}:  {}".format(v.name, v.get_shape()))
+
+
+    optim = optimiser.minimize(hed_total_cost, var_list=final_trainable)
+
+    images_summary = tf.py_func(inv_preprocess, [image_batch, SAVE_NUM_IMAGES], tf.uint8)
+    labels_summary = tf.py_func(decode_labels_by_batch, [label_batch, SAVE_NUM_IMAGES], tf.uint8)
+
+    gt_att_summary = tf.py_func(single_channel_process, [cam_gt, SAVE_NUM_IMAGES], tf.uint8)
+    predicted_att_summary = tf.py_func(single_channel_process, [cam_pre, SAVE_NUM_IMAGES], tf.uint8)
+    confidence_summay = tf.py_func(single_channel_process, [confidence_map, SAVE_NUM_IMAGES], tf.uint8)
+
+    # define Summary
+    summary_list = []
+    for var in tf.trainable_variables():
+        summary_list.append(tf.summary.histogram(var.op.name + "/values", var))
+
+    # summary
+    with tf.name_scope("loss_summary"):
+        summary_list.append(tf.summary.scalar("main_loss", hed_total_cost))
+
+    with tf.name_scope("image_summary"):
+        # origin_summary = tf.summary.image("origin", images_summary)
+        # label_summary = tf.summary.image("label", labels_summary)
+        summary_list.append(tf.summary.image('total_image',
+                                             tf.concat([images_summary, labels_summary, gt_att_summary, predicted_att_summary,
+                                                        predicted_att_summary], 2),
+                                             max_outputs=SAVE_NUM_IMAGES))
+
+        summary_list.append(tf.summary.image('confidence_map',
+                                             tf.concat([images_summary, labels_summary, confidence_summay], 2),
+                                             max_outputs=SAVE_NUM_IMAGES))
+
+    merged_summary_op = tf.summary.merge(summary_list)
+
+
+
     # Set up tf session and initialize variables. 
     config = tf.ConfigProto()
     config.gpu_options.allow_growth = True
@@ -136,9 +201,10 @@ def main():
     init = tf.global_variables_initializer()
     
     sess.run(init)
+    summary_writer = tf.summary.FileWriter(args.summay_dir, sess.graph)
     
     # Saver for storing checkpoints of the model.
-    saver = tf.train.Saver(var_list=trainable, max_to_keep=40)
+    saver = tf.train.Saver(var_list=recover_variables, max_to_keep=40)
     if args.restore_from is not None:
         load(saver, sess, args.restore_from)
     
@@ -156,24 +222,16 @@ def main():
         cur_lr = args.learning_rate/math.pow(10,lr_scale)
         print ("current learning rate: {}".format(cur_lr))
 
+        loss_value, _ = sess.run([hed_total_cost, optim],feed_dict={learning_rate: cur_lr})
 
         if step % args.save_pred_every == 0:
-            loss_value, images, labels, preds, _ = sess.run([loss, image_batch, label_batch, pred, optim],feed_dict={learning_rate:cur_lr})
-            fig, axes = plt.subplots(args.save_num_images, 3, figsize = (16, 12))
-            for i in xrange(args.save_num_images):
-                axes.flat[i * 3].set_title('data')
-                axes.flat[i * 3].imshow((images[i] + IMG_MEAN)[:, :, ::-1].astype(np.uint8))
-
-                axes.flat[i * 3 + 1].set_title('mask')
-                axes.flat[i * 3 + 1].imshow(decode_labels(labels[i, :, :, 0]))
-
-                axes.flat[i * 3 + 2].set_title('pred')
-                axes.flat[i * 3 + 2].imshow(decode_labels(preds[i, :, :, 0]))
-            plt.savefig(args.save_dir + str(start_time) + ".png")
-            plt.close(fig)
             save(saver, sess, args.snapshot_dir, step)
-        else:
-            loss_value, _ = sess.run([loss, optim],feed_dict={learning_rate:cur_lr})
+        if step % args.summary_freq == 0:
+            print("write summay...")
+            # generate summary for tensorboard
+            summary_str = sess.run(merged_summary_op)
+            summary_writer.add_summary(summary_str, step)
+
         duration = time.time() - start_time
         print('step {:d} \t loss = {:.3f}, ({:.3f} sec/step)'.format(step, loss_value, duration))
     coord.request_stop()

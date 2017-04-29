@@ -122,6 +122,49 @@ class DeepLabLFOVModel(object):
                     conv = tf.nn.atrous_conv2d(current, w, dilation, padding='SAME')
                 current = tf.nn.relu(tf.nn.bias_add(conv, b))
                 v_idx += 1
+
+            if b_idx == 0:
+                w = tf.get_variable(name="block1/w", shape=[3,3,64,1],initializer=tf.contrib.layers.xavier_initializer())
+                b = tf.get_variable('block1/b', [1], initializer=tf.contrib.layers.xavier_initializer(uniform=True))
+                block1 = tf.nn.conv2d(current,w,strides=[1,1,1,1],padding='SAME')
+                block1 = tf.nn.bias_add(block1, b)
+                #houmian tongyi jia sigmoid
+            elif b_idx ==1:
+                w = tf.get_variable(name="block2/w", shape=[3, 3, 128, 1],
+                                    initializer=tf.contrib.layers.xavier_initializer())
+                b = tf.get_variable('block2/b', [1], initializer=tf.contrib.layers.xavier_initializer(uniform=True))
+                block2 = tf.nn.conv2d(current, w, strides=[1, 1, 1, 1], padding='SAME')
+                block2 = tf.image.resize_bilinear(block2, tf.shape(input_batch)[1:3, ])
+                block2 = tf.nn.bias_add(block2, b)
+                # houmian tongyi jia sigmoid
+            elif b_idx ==2:
+                w = tf.get_variable(name="block3/w", shape=[3, 3, 256, 1],
+                                    initializer=tf.contrib.layers.xavier_initializer())
+                b = tf.get_variable('block3/b', [1], initializer=tf.contrib.layers.xavier_initializer(uniform=True))
+                block3 = tf.nn.conv2d(current, w, strides=[1, 1, 1, 1], padding='SAME')
+                block3 = tf.image.resize_bilinear(block3, tf.shape(input_batch)[1:3, ])
+                block3 = tf.nn.bias_add(block3, b)
+                # houmian tongyi jia sigmoid
+            elif b_idx ==3:
+                w = tf.get_variable(name="block4/w", shape=[3, 3, 512, 1],
+                                    initializer=tf.contrib.layers.xavier_initializer())
+                b = tf.get_variable('block4/b', [1], initializer=tf.contrib.layers.xavier_initializer(uniform=True))
+                block4 = tf.nn.conv2d(current, w, strides=[1, 1, 1, 1], padding='SAME')
+                block4 = tf.image.resize_bilinear(block4, tf.shape(input_batch)[1:3, ])
+                block4 = tf.nn.bias_add(block4, b)
+                # houmian tongyi jia sigmoid
+            elif b_idx ==4:
+                w = tf.get_variable(name="block5/w", shape=[3, 3, 512, 1],
+                                    initializer=tf.contrib.layers.xavier_initializer())
+                b = tf.get_variable('block5/b', [1], initializer=tf.contrib.layers.xavier_initializer(uniform=True))
+                block5 = tf.nn.conv2d(current, w, strides=[1, 1, 1, 1], padding='SAME')
+                block5 = tf.image.resize_bilinear(block5, tf.shape(input_batch)[1:3, ])
+                block5 = tf.nn.bias_add(block5, b)
+                # houmian tongyi jia sigmoid
+            else:
+                pass
+
+
             # Optional pooling and dropout after each block.
             if b_idx < 3:
                 current = tf.nn.max_pool(current, 
@@ -151,7 +194,13 @@ class DeepLabLFOVModel(object):
         conv = tf.nn.conv2d(current, w, strides=[1, 1, 1, 1], padding='SAME')
         current = tf.nn.bias_add(conv, b)
 
-        return current
+        w_final_map = tf.get_variable(name="block_main/w", shape=[3, 3, 5, 1],
+                            initializer=tf.contrib.layers.xavier_initializer())
+        b_final_map = tf.get_variable('block_main/b', [1], initializer=tf.contrib.layers.xavier_initializer(uniform=True))
+        final_map = tf.nn.conv2d(tf.concat([block1, block2, block3, block4, block5], 3),w_final_map,strides=[1, 1, 1, 1], padding='SAME')
+        final_map = tf.nn.bias_add(final_map, b_final_map)
+
+        return current,[block1, block2, block3, block4, block5,final_map]
     
     def prepare_label(self, input_batch, new_size):
         """Resize masks and perform one-hot encoding.
@@ -195,7 +244,7 @@ class DeepLabLFOVModel(object):
         Returns:
           Pixel-wise softmax loss.
         """
-        raw_output = self._create_network(tf.cast(img_batch, tf.float32), keep_prob=tf.constant(0.5))
+        raw_output,hed_predict_list = self._create_network(tf.cast(img_batch, tf.float32), keep_prob=tf.constant(0.5))
         prediction = tf.reshape(raw_output, [-1, n_classes])
         
         # Need to resize labels and convert using one-hot encoding.
@@ -209,4 +258,31 @@ class DeepLabLFOVModel(object):
         reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
         loss = reduced_loss + weight_decay * sum(reg_losses)
 
-        return reduced_loss
+        #calculate confusion attention map
+
+        gt_upscaled = tf.image.resize_bilinear(label_batch, tf.shape(img_batch)[1:3, ])
+        gt_upscaled = tf.argmax(gt_upscaled, dimension=3)
+        gt_upscaled = tf.expand_dims(gt_upscaled, dim=3)  # from 3-D to 4-D
+        gt_upscaled = tf.cast(gt_upscaled, tf.float32)
+
+        predict_4d = tf.image.resize_bilinear(raw_output, tf.shape(img_batch)[1:3, ])
+        predict_4d = tf.nn.softmax(predict_4d)
+        predict_3d = confidence_map =  tf.reduce_max(predict_4d, keep_dims=True, axis=3)
+        predict_3d_inverse = tf.subtract(tf.constant(1.0), predict_3d)
+
+        att_3d = tf.cast(tf.not_equal(gt_upscaled, predict_3d), tf.float32)
+        att_3d_inverse = tf.cast(tf.equal(gt_upscaled, predict_3d), tf.float32)
+
+        attention_map_gt = tf.add(tf.multiply(predict_3d, att_3d), tf.multiply(predict_3d_inverse, att_3d_inverse))
+
+
+        #confusion attention map loss
+        costs = []
+        for idx, b in enumerate(hed_predict_list):
+            b = tf.squeeze(b, squeeze_dims=[3])
+            b = tf.nn.sigmoid(b, name='hed-output{}'.format(idx + 1))
+            bcost = tf.reduce_mean(tf.square(b - attention_map_gt),name="hed-loss-{}".format(idx+1))
+            costs.append(bcost)
+        hed_total_cost = tf.add_n(costs, name='hed-total-loss')
+
+        return reduced_loss,hed_total_cost,b,attention_map_gt,confidence_map
