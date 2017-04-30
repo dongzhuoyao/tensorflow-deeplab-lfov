@@ -120,7 +120,6 @@ def single_channel_process(imgs, num_images):
     for i in range(num_images):
         tmp = imgs[i].flatten()
         bins = np.array([0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0])
-        #bins = np.array([0.0, 1,10,30,100,200])
         tmp = np.digitize(tmp, bins)
         tmp = tmp*255.0/tmp.max()
         tmp = tmp.reshape((h,w)).astype(np.uint8)
