@@ -329,11 +329,12 @@ class DeepLabLFOVModel(object):
 
         #confusion attention map loss
         costs = []
-        for idx, b in enumerate(hed_predict_list):
-            b = tf.nn.sigmoid(b, name='hed-output{}'.format(idx + 1))
-            bcost = tf.reduce_mean(tf.square(b - attention_map_gt),name="hed-loss-{}".format(idx+1))
-            costs.append(bcost)
-        hed_total_cost = tf.add_n(costs, name='hed-total-loss')
+        with tf.name_scope('hed-total-loss'):
+            for idx, b in enumerate(hed_predict_list):
+                b = tf.nn.sigmoid(b, name='hed-output{}'.format(idx + 1))
+                bcost = tf.reduce_mean(tf.square(b - attention_map_gt),name="hed-loss-{}".format(idx+1))
+                costs.append(bcost)
+            hed_total_cost = tf.add_n(costs, name='hed-total-loss')
 
         tf.summary.histogram('att_4d', att_4d)
         tf.summary.histogram('att_4d_inverse', att_4d_inverse)
