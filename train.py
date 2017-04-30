@@ -191,7 +191,7 @@ def main():
 
     summary_list.append(tf.summary.histogram('cam_gt', cam_gt))
     summary_list.append(tf.summary.histogram('confidence_map', confidence_map))
-
+    summary_list.append(tf.summary.histogram('predict_summary', predict_summary))
     # summary
     with tf.name_scope("loss_summary"):
         summary_list.append(tf.summary.scalar("main_loss", hed_total_cost))
