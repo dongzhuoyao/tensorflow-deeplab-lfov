@@ -140,6 +140,7 @@ class DeepLabLFOVModel(object):
                 feature_map_list_for_debug.append(current)
                 v_idx += 1
 
+            """
             if b_idx == 0:
                 w = tf.get_variable(name="block1/w", shape=[3,3,64,1],initializer=tf.contrib.layers.xavier_initializer())
                 b = tf.get_variable(name='block1/b', shape=[1], initializer=tf.contrib.layers.xavier_initializer(uniform=True))
@@ -190,7 +191,7 @@ class DeepLabLFOVModel(object):
                 # houmian tongyi jia sigmoid
             else:
                 pass
-
+            """
 
             # Optional pooling and dropout after each block.
             if b_idx < 3:
@@ -226,6 +227,7 @@ class DeepLabLFOVModel(object):
         conv = tf.nn.conv2d(current, w, strides=[1, 1, 1, 1], padding='SAME')
         current = tf.nn.bias_add(conv, b)
 
+        """
         w_final_map = tf.get_variable(name="block_main/w", shape=[3, 3, 5, 1],
                             initializer=tf.contrib.layers.xavier_initializer())
         b_final_map = tf.get_variable('block_main/b', [1], initializer=tf.contrib.layers.xavier_initializer(uniform=True))
@@ -238,6 +240,8 @@ class DeepLabLFOVModel(object):
 
 
         return current,[block1, block2, block3, block4, block5,final_map]
+        """
+        return current
     
     def prepare_label(self, input_batch, new_size):
         """Resize masks and perform one-hot encoding.
@@ -281,7 +285,8 @@ class DeepLabLFOVModel(object):
         Returns:
           Pixel-wise softmax loss.
         """
-        raw_output,hed_predict_list = self._create_network(tf.cast(img_batch, tf.float32), keep_prob=keep_prob)
+        #raw_output,hed_predict_list = self._create_network(tf.cast(img_batch, tf.float32), keep_prob=keep_prob)
+        raw_output = self._create_network(tf.cast(img_batch, tf.float32), keep_prob=keep_prob)
         prediction = tf.reshape(raw_output, [-1, n_classes])
 
         org_label_batch = label_batch
@@ -320,6 +325,7 @@ class DeepLabLFOVModel(object):
         assert_op_2 = tf.Assert(tf.less_equal(tf.reduce_max(confidence_map), 1.), [confidence_map])
 
 
+        """
         #confusion attention map loss
         costs = []
         for idx, b in enumerate(hed_predict_list):
@@ -335,3 +341,5 @@ class DeepLabLFOVModel(object):
 
         with tf.control_dependencies([assert_op, assert_op_2]):
             return reduced_loss,hed_total_cost,predict_4d_label,b,attention_map_gt,confidence_map,predict_4d
+        """
+        return reduced_loss
