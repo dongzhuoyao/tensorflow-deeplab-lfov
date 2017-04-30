@@ -135,10 +135,10 @@ def main():
 
     # Define the loss and optimisation parameters.
     with tf.variable_scope(tf.get_variable_scope()) as scope:
-        _,hed_total_cost,predict_4d_label,cam_pre,cam_gt,confidence_map = net.loss(image_batch, label_batch,weight_decay=weight_decay)
+        _,hed_total_cost,predict_4d_label,cam_pre,cam_gt,confidence_map,predict_4d = net.loss(image_batch, label_batch,weight_decay=weight_decay)
 
-    confidence_map_print = tf.Print(confidence_map, [tf.nn.top_k(confidence_map,k=10)],'reduce_max(confidence_map) = ', summarize=20, first_n=100)
-    cam_gt_print = tf.Print(cam_gt, [tf.nn.top_k(cam_gt,K=10)], 'reduce_max(cam_gt) = ',summarize=20, first_n=100)
+    confidence_map_print = tf.Print(confidence_map, [tf.nn.top_k(confidence_map,k=1)],'reduce_max(confidence_map) = ', summarize=20, first_n=100)
+    cam_gt_print = tf.Print(cam_gt, [tf.nn.top_k(predict_4d,K=10)], 'top_k(predict_4d) = ',summarize=20, first_n=100)
 
     learning_rate = tf.placeholder(tf.float32, shape=[])
     optimiser = tf.train.MomentumOptimizer(learning_rate=learning_rate,momentum=0.9)
