@@ -300,6 +300,10 @@ class DeepLabLFOVModel(object):
         attention_map_gt = tf.add(tf.multiply(predict_4d_pro, att_4d), tf.multiply(predict_4d_pro_inverse, att_4d_inverse))
 
 
+        assert_op = tf.Assert(tf.less_equal(tf.reduce_max(attention_map_gt), 1.), [attention_map_gt])
+        assert_op_2 = tf.Assert(tf.less_equal(tf.reduce_max(confidence_map), 1.), [confidence_map])
+
+
         #confusion attention map loss
         costs = []
         for idx, b in enumerate(hed_predict_list):
@@ -308,4 +312,5 @@ class DeepLabLFOVModel(object):
             costs.append(bcost)
         hed_total_cost = tf.add_n(costs, name='hed-total-loss')
 
-        return reduced_loss,hed_total_cost,b,attention_map_gt,confidence_map
+        with tf.control_dependencies([assert_op, assert_op_2]):
+            return reduced_loss,hed_total_cost,b,attention_map_gt,confidence_map
