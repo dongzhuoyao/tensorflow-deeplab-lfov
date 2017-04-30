@@ -241,7 +241,7 @@ def main():
         cur_lr = args.learning_rate/math.pow(10,lr_scale)
         print ("current learning rate: {}".format(cur_lr))
 
-        _,_,loss_value, _ = sess.run([cam_gt_print,confidence_map_print,hed_total_cost, seg_optim],feed_dict={learning_rate: cur_lr})
+        _,_,loss_value, _ = sess.run([cam_gt_print,confidence_map_print,hed_total_cost, optim],feed_dict={learning_rate: cur_lr})
 
 
 
