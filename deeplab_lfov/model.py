@@ -318,4 +318,4 @@ class DeepLabLFOVModel(object):
         tf.summary.histogram('predict_4d_pro_inverse', predict_4d_pro_inverse)
 
         with tf.control_dependencies([assert_op, assert_op_2]):
-            return reduced_loss,hed_total_cost,b,attention_map_gt,confidence_map
+            return reduced_loss,hed_total_cost,predict_4d_label,b,attention_map_gt,confidence_map
