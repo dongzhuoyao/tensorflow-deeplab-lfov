@@ -189,6 +189,9 @@ def main():
     for var in tf.trainable_variables():
         summary_list.append(tf.summary.histogram(var.op.name + "/values", var))
 
+    summary_list.append(tf.summary.histogram('cam_gt', cam_gt))
+    summary_list.append(tf.summary.histogram('confidence_map', confidence_map))
+
     # summary
     with tf.name_scope("loss_summary"):
         summary_list.append(tf.summary.scalar("main_loss", hed_total_cost))
