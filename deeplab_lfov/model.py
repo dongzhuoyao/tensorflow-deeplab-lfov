@@ -281,7 +281,7 @@ class DeepLabLFOVModel(object):
         Returns:
           Pixel-wise softmax loss.
         """
-        raw_output,hed_predict_list = self._create_network(tf.cast(img_batch, tf.float32), keep_prob=tf.constant(1))
+        raw_output,hed_predict_list = self._create_network(tf.cast(img_batch, tf.float32), keep_prob=tf.constant(1.0))
         prediction = tf.reshape(raw_output, [-1, n_classes])
 
         org_label_batch = label_batch
