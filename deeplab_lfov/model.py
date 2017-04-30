@@ -96,12 +96,18 @@ class DeepLabLFOVModel(object):
                     var.append(b)
         return var
 
-    def upsample_double(self, name, current, output_shape):
+    def upsample_double(self, name, current,output_shape):
+        upsample_factor = 2
+        #x = tf.pad(current, [[0, 0], [upsample_factor - 1, upsample_factor - 1], [upsample_factor - 1, upsample_factor - 1], [0, 0]], mode='SYMMETRIC')
+        #out_shape = tf.shape(x) * tf.constant([1, upsample_factor, upsample_factor, 1], tf.int32)
+
+        #filter_shape = 2 * upsample_factor
+
         w = tf.get_variable(name=name, shape=[3, 3, 1, 1],
                             initializer=tf.contrib.layers.xavier_initializer())
         current = tf.nn.conv2d_transpose(current, w,
                                         output_shape=output_shape,
-                                        strides=[1, 2, 2, 1], padding="SAME")
+                                        strides=[1, upsample_factor, upsample_factor, 1], padding="SAME")
         return current
     
     def _create_network(self, input_batch, keep_prob):
@@ -115,6 +121,9 @@ class DeepLabLFOVModel(object):
           A downsampled segmentation mask. 
         """
         current = input_batch
+
+
+        feature_map_list_for_debug = []
         
         v_idx = 0 # Index variable.
         
@@ -128,6 +137,7 @@ class DeepLabLFOVModel(object):
                 else:
                     conv = tf.nn.atrous_conv2d(current, w, dilation, padding='SAME')
                 current = tf.nn.relu(tf.nn.bias_add(conv, b))
+                feature_map_list_for_debug.append(current)
                 v_idx += 1
 
             if b_idx == 0:
@@ -143,7 +153,7 @@ class DeepLabLFOVModel(object):
                 block2 = tf.nn.conv2d(current, w, strides=[1, 1, 1, 1], padding='SAME')
                 block2 = tf.nn.bias_add(block2, b)
 
-                block2 = self.upsample_double("block2/deconv1/w", block2, tf.shape(input_batch)[:])
+                block2 = self.upsample_double("block2/deconv1/w", block2, [tf.shape(input_batch)[0],321,321,1])
                 # houmian tongyi jia sigmoid
             elif b_idx ==2:
                 w = tf.get_variable(name="block3/w", shape=[3, 3, 256, 1],
@@ -153,8 +163,8 @@ class DeepLabLFOVModel(object):
                 block3 = tf.nn.bias_add(block3, b)
 
 
-                block3 = self.upsample_double("block3/deconv1/w", block3, tf.shape(input_batch)[:])
-                block3 = self.upsample_double("block3/deconv2/w", block3, tf.shape(input_batch)[:])
+                block3 = self.upsample_double("block3/deconv1/w", block3, [tf.shape(input_batch)[0],161,161,1])
+                block3 = self.upsample_double("block3/deconv2/w", block3, [tf.shape(input_batch)[0],321,321,1])
                 # houmian tongyi jia sigmoid
             elif b_idx ==3:
                 w = tf.get_variable(name="block4/w", shape=[3, 3, 512, 1],
@@ -163,9 +173,9 @@ class DeepLabLFOVModel(object):
                 block4 = tf.nn.conv2d(current, w, strides=[1, 1, 1, 1], padding='SAME')
                 block4 = tf.nn.bias_add(block4, b)
 
-                block4 = self.upsample_double("block4/deconv1/w", block4, tf.shape(input_batch)[:])
-                block4 = self.upsample_double("block4/deconv2/w", block4, tf.shape(input_batch)[:])
-                block4 = self.upsample_double("block4/deconv3/w", block4, tf.shape(input_batch)[:])
+                block4 = self.upsample_double("block4/deconv1/w", block4, [tf.shape(input_batch)[0],81,81,1])
+                block4 = self.upsample_double("block4/deconv2/w", block4, [tf.shape(input_batch)[0],161,161,1])
+                block4 = self.upsample_double("block4/deconv3/w", block4, [tf.shape(input_batch)[0],321,321,1])
                 # houmian tongyi jia sigmoid
             elif b_idx ==4:
                 w = tf.get_variable(name="block5/w", shape=[3, 3, 512, 1],
@@ -174,10 +184,9 @@ class DeepLabLFOVModel(object):
                 block5 = tf.nn.conv2d(current, w, strides=[1, 1, 1, 1], padding='SAME')
                 block5 = tf.nn.bias_add(block5, b)
 
-                block5 = self.upsample_double("block5/deconv1/w", block5, tf.shape(input_batch)[:])
-                block5 = self.upsample_double("block5/deconv2/w", block5, tf.shape(input_batch)[:])
-                block5 = self.upsample_double("block5/deconv3/w", block5, tf.shape(input_batch)[:])
-                block5 = self.upsample_double("block5/deconv4/w", block5, tf.shape(input_batch)[:])
+                block5 = self.upsample_double("block5/deconv1/w", block5, [tf.shape(input_batch)[0],81,81,1])
+                block5 = self.upsample_double("block5/deconv2/w", block5, [tf.shape(input_batch)[0],161,161,1])
+                block5 = self.upsample_double("block5/deconv3/w", block5, [tf.shape(input_batch)[0],321,321,1])
                 # houmian tongyi jia sigmoid
             else:
                 pass
@@ -189,22 +198,27 @@ class DeepLabLFOVModel(object):
                                          ksize=[1, ks, ks, 1],
                                          strides=[1, 2, 2, 1],
                                          padding='SAME')
+                feature_map_list_for_debug.append(current)
             elif b_idx == 3:
                 current = tf.nn.max_pool(current, 
                              ksize=[1, ks, ks, 1],
                              strides=[1, 1, 1, 1],
                              padding='SAME')
+                feature_map_list_for_debug.append(current)
             elif b_idx == 4:
                 current = tf.nn.max_pool(current, 
                                          ksize=[1, ks, ks, 1],
                                          strides=[1, 1, 1, 1],
                                          padding='SAME')
+                feature_map_list_for_debug.append(current)
                 current = tf.nn.avg_pool(current, 
                                          ksize=[1, ks, ks, 1],
                                          strides=[1, 1, 1, 1],
                                          padding='SAME')
+                feature_map_list_for_debug.append(current)
             elif b_idx <= 6:
                 current = tf.nn.dropout(current, keep_prob=keep_prob)
+                feature_map_list_for_debug.append(current)
         
         # Classification layer; no ReLU.
         w = self.variables[v_idx * 2]
@@ -217,6 +231,11 @@ class DeepLabLFOVModel(object):
         b_final_map = tf.get_variable('block_main/b', [1], initializer=tf.contrib.layers.xavier_initializer(uniform=True))
         final_map = tf.nn.conv2d(tf.concat([block1, block2, block3, block4, block5], 3),w_final_map,strides=[1, 1, 1, 1], padding='SAME')
         final_map = tf.nn.bias_add(final_map, b_final_map)
+
+        print("====feature map check====")
+        for v in feature_map_list_for_debug:
+            print("{}:  {}".format(v.name, v.get_shape()))
+
 
         return current,[block1, block2, block3, block4, block5,final_map]
     
@@ -274,8 +293,8 @@ class DeepLabLFOVModel(object):
         loss = tf.nn.softmax_cross_entropy_with_logits(logits=prediction, labels=gt)
         reduced_loss = tf.reduce_mean(loss)
 
-        reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
-        loss = reduced_loss + weight_decay * sum(reg_losses)
+        #reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
+        loss = reduced_loss
 
         #calculate confusion attention map
 
