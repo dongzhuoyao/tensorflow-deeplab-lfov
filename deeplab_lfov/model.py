@@ -333,7 +333,16 @@ class DeepLabLFOVModel(object):
         with tf.name_scope('hed-total-loss'):
             for idx, b in enumerate(hed_predict_list):
                 b = tf.nn.sigmoid(b, name='hed-output{}'.format(idx + 1))
-                bcost = tf.reduce_mean(tf.square(b - attention_map_gt),name="hed-loss-{}".format(idx+1))
+                square_result = tf.square(b - attention_map_gt)
+                attention_weight = tf.reshape(attention_map_gt,[16 , -1])
+                attention_fenmu = tf.reduce_sum(attention_weight,axis=1,keep_dims=True)
+                attention_weight = tf.div(attention_weight,attention_fenmu)
+
+                attention_weight = tf.reshape(attention_weight,tf.shape(img_batch)[0:3])
+                attention_weight =tf.expand_dims(attention_weight,dim=3)
+
+                bcost = tf.multiply(attention_weight,square_result)
+
                 costs.append(bcost)
             hed_loss = tf.add_n(costs, name='hed-total-loss')
 
