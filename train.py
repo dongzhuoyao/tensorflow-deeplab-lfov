@@ -38,7 +38,7 @@ RESTORE_FROM = './deeplab_lfov.ckpt'
 SAVE_DIR = './images/'
 SAVE_NUM_IMAGES = 4
 SAVE_PRED_EVERY = 500
-SUMMARY_FREQ = 5
+SUMMARY_FREQ = 50
 weight_decay = 0.0002
 SNAPSHOT_DIR = './snapshots/'
 WEIGHTS_PATH   = None
@@ -137,8 +137,8 @@ def main():
     with tf.variable_scope(tf.get_variable_scope()) as scope:
         seg_loss,hed_total_cost,predict_4d_label,cam_pre,cam_gt,confidence_map,predict_4d = net.loss(image_batch, label_batch,weight_decay=weight_decay)
 
-    confidence_map_print = tf.Print(confidence_map, [tf.nn.top_k(confidence_map,k=1)[0]],'reduce_max(confidence_map) = ', summarize=20, first_n=100)
-    cam_gt_print = tf.Print(cam_gt, [tf.nn.top_k(predict_4d,k=10)[0]], 'top_k(predict_4d) = ',summarize=20, first_n=100)
+    #confidence_map_print = tf.Print(confidence_map, [tf.nn.top_k(confidence_map,k=1)[0]],'reduce_max(confidence_map) = ', summarize=20, first_n=100)
+    #cam_gt_print = tf.Print(cam_gt, [tf.nn.top_k(predict_4d,k=10)[0]], 'top_k(predict_4d) = ',summarize=20, first_n=100)
 
     learning_rate = tf.placeholder(tf.float32, shape=[])
     optimiser = tf.train.MomentumOptimizer(learning_rate=learning_rate,momentum=0.9)
@@ -241,7 +241,7 @@ def main():
         cur_lr = args.learning_rate/math.pow(10,lr_scale)
         print ("current learning rate: {}".format(cur_lr))
 
-        _,_,loss_value, _ = sess.run([cam_gt_print,confidence_map_print,hed_total_cost, optim],feed_dict={learning_rate: cur_lr})
+        loss_value, _ = sess.run([hed_total_cost, optim],feed_dict={learning_rate: cur_lr})
 
 
 
