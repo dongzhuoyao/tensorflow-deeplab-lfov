@@ -137,8 +137,8 @@ def main():
     with tf.variable_scope(tf.get_variable_scope()) as scope:
         _,hed_total_cost,predict_4d_label,cam_pre,cam_gt,confidence_map = net.loss(image_batch, label_batch,weight_decay=weight_decay)
 
-    confidence_map_print = tf.Print(confidence_map, [tf.reduce_max(confidence_map)],'reduce_max(confidence_map) = ', summarize=20, first_n=100)
-    cam_gt_print = tf.Print(cam_gt, [tf.reduce_max(cam_gt)], 'reduce_max(cam_gt) = ',summarize=20, first_n=100)
+    confidence_map_print = tf.Print(confidence_map, [tf.nn.top_k(confidence_map,k=10)],'reduce_max(confidence_map) = ', summarize=20, first_n=100)
+    cam_gt_print = tf.Print(cam_gt, [tf.nn.top_k(cam_gt,K=10)], 'reduce_max(cam_gt) = ',summarize=20, first_n=100)
 
     learning_rate = tf.placeholder(tf.float32, shape=[])
     optimiser = tf.train.MomentumOptimizer(learning_rate=learning_rate,momentum=0.9)
@@ -225,7 +225,7 @@ def main():
     if args.restore_from is not None:
         load(readSaver, sess, args.restore_from)
 
-    
+
     # Start queue threads.
     threads = tf.train.start_queue_runners(coord=coord, sess=sess)
     
