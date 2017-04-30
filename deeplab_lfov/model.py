@@ -303,28 +303,29 @@ class DeepLabLFOVModel(object):
         #reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
         loss = reduced_loss
 
-        #calculate confusion attention map
+        with tf.name_scope('calculate-cam'):
+            #calculate confusion attention map
 
-        gt_4d_label = org_label_batch
-        gt_4d_label = tf.cast(gt_4d_label, tf.uint8)
+            gt_4d_label = org_label_batch
+            gt_4d_label = tf.cast(gt_4d_label, tf.uint8)
 
-        predict_4d = tf.image.resize_bilinear(raw_output, tf.shape(img_batch)[1:3, ])
-        #predict_4d = tf.nn.softmax(predict_4d) #convert to number between 0-1
-        predict_4d_label = tf.expand_dims(tf.argmax(predict_4d, dimension=3),dim=3)
-        predict_4d_label = tf.cast(predict_4d_label, tf.uint8)
+            predict_4d = tf.image.resize_bilinear(raw_output, tf.shape(img_batch)[1:3, ])
+            #predict_4d = tf.nn.softmax(predict_4d) #convert to number between 0-1
+            predict_4d_label = tf.expand_dims(tf.argmax(predict_4d, dimension=3),dim=3)
+            predict_4d_label = tf.cast(predict_4d_label, tf.uint8)
 
-        predict_4d = tf.nn.softmax(predict_4d)  # convert to number between 0-1
-        predict_4d_pro = confidence_map =  tf.reduce_max(predict_4d, keep_dims=True, axis=3)
-        predict_4d_pro_inverse = tf.subtract(tf.constant(1.0), predict_4d_pro)
+            predict_4d = tf.nn.softmax(predict_4d)  # convert to number between 0-1
+            predict_4d_pro = confidence_map =  tf.reduce_max(predict_4d, keep_dims=True, axis=3)
+            predict_4d_pro_inverse = tf.subtract(tf.constant(1.0), predict_4d_pro)
 
-        att_4d = tf.cast(tf.not_equal(gt_4d_label, predict_4d_label), tf.float32)
-        att_4d_inverse = tf.cast(tf.equal(gt_4d_label, predict_4d_label), tf.float32)
+            att_4d = tf.cast(tf.not_equal(gt_4d_label, predict_4d_label), tf.float32)
+            att_4d_inverse = tf.cast(tf.equal(gt_4d_label, predict_4d_label), tf.float32)
 
-        attention_map_gt = tf.add(tf.multiply(predict_4d_pro, att_4d), tf.multiply(predict_4d_pro_inverse, att_4d_inverse))
+            attention_map_gt = tf.add(tf.multiply(predict_4d_pro, att_4d), tf.multiply(predict_4d_pro_inverse, att_4d_inverse))
 
 
-        assert_op = tf.Assert(tf.less_equal(tf.reduce_max(attention_map_gt), 1.), [attention_map_gt])
-        assert_op_2 = tf.Assert(tf.less_equal(tf.reduce_max(confidence_map), 1.), [confidence_map])
+            assert_op = tf.Assert(tf.less_equal(tf.reduce_max(attention_map_gt), 1.), [attention_map_gt])
+            assert_op_2 = tf.Assert(tf.less_equal(tf.reduce_max(confidence_map), 1.), [confidence_map])
 
 
         #confusion attention map loss
