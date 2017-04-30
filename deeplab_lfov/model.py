@@ -255,22 +255,7 @@ class DeepLabLFOVModel(object):
             input_batch = tf.squeeze(input_batch, squeeze_dims=[3]) # Reducing the channel dimension.
             input_batch = tf.one_hot(input_batch, depth=21)
         return input_batch
-      
-    def preds(self, input_batch):
-        """Create the network and run inference on the input batch.
-        
-        Args:
-          input_batch: batch of pre-processed images.
-          
-        Returns:
-          Argmax over the predictions of the network of the same shape as the input.
-        """
-        raw_output = self._create_network(tf.cast(input_batch, tf.float32), keep_prob=tf.constant(1.0))
-        raw_output = tf.image.resize_bilinear(raw_output, tf.shape(input_batch)[1:3,])
-        raw_output = tf.argmax(raw_output, dimension=3)
-        raw_output = tf.expand_dims(raw_output, dim=3) # Create 4D-tensor.
-        return tf.cast(raw_output, tf.uint8)
-        
+
     
     def loss(self, img_batch, label_batch,weight_decay = 0.05):
         """Create the network, run inference on the input batch and compute loss.
@@ -302,7 +287,7 @@ class DeepLabLFOVModel(object):
         gt_4d_label = tf.cast(gt_4d_label, tf.uint8)
 
         predict_4d = tf.image.resize_bilinear(raw_output, tf.shape(img_batch)[1:3, ])
-        predict_4d = tf.nn.softmax(predict_4d)
+        predict_4d = tf.nn.softmax(predict_4d) #convert to number between 0-1
         predict_4d_label = tf.expand_dims(tf.argmax(predict_4d, dimension=3),dim=3)
         predict_4d_label = tf.cast(predict_4d_label, tf.uint8)
 

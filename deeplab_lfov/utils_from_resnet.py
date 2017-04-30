@@ -119,6 +119,7 @@ def single_channel_process(imgs, num_images):
     outputs = np.zeros((num_images, h, w, 3), dtype=np.uint8)
     for i in range(num_images):
         tmp = imgs[i].flatten()
+        print tmp
         bins = np.array([0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0])
         tmp = np.digitize(tmp, bins)
         tmp = tmp*255.0/tmp.max()

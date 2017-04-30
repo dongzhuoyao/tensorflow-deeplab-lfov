@@ -136,6 +136,7 @@ def main():
     # Define the loss and optimisation parameters.
     with tf.variable_scope(tf.get_variable_scope()) as scope:
         _,hed_total_cost,cam_pre,cam_gt,confidence_map = net.loss(image_batch, label_batch,weight_decay=weight_decay)
+
     learning_rate = tf.placeholder(tf.float32, shape=[])
     optimiser = tf.train.MomentumOptimizer(learning_rate=learning_rate,momentum=0.9)
 
