@@ -335,12 +335,13 @@ class DeepLabLFOVModel(object):
                 b = tf.nn.sigmoid(b, name='hed-output{}'.format(idx + 1))
                 bcost = tf.reduce_mean(tf.square(b - attention_map_gt),name="hed-loss-{}".format(idx+1))
                 costs.append(bcost)
-            hed_total_cost = tf.add_n(costs, name='hed-total-loss')
+            hed_loss = tf.add_n(costs, name='hed-total-loss')
 
         tf.summary.histogram('att_4d', att_4d)
         tf.summary.histogram('att_4d_inverse', att_4d_inverse)
         tf.summary.histogram('predict_4d_pro', predict_4d_pro)
         tf.summary.histogram('predict_4d_pro_inverse', predict_4d_pro_inverse)
 
+        attention_pre=b
         with tf.control_dependencies([assert_op, assert_op_2]):
-            return reduced_loss,hed_total_cost,predict_4d_label,b,attention_map_gt,confidence_map,predict_4d
+            return reduced_loss,hed_loss,predict_4d_label,attention_pre,attention_map_gt,confidence_map,predict_4d

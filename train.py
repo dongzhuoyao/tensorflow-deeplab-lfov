@@ -175,7 +175,7 @@ def main():
 
     optim = optimiser.minimize(hed_total_cost, var_list=final_trainable)
 
-    seg_optim = optimiser.minimize(seg_loss)
+    seg_optim = optimiser.minimize(seg_loss,var_list=tf.global_variables())
 
 
     images_summary = tf.py_func(inv_preprocess, [image_batch, SAVE_NUM_IMAGES], tf.uint8)
@@ -199,8 +199,6 @@ def main():
         summary_list.append(tf.summary.scalar("main_loss", hed_total_cost))
 
     with tf.name_scope("image_summary"):
-        # origin_summary = tf.summary.image("origin", images_summary)
-        # label_summary = tf.summary.image("label", labels_summary)
         summary_list.append(tf.summary.image('total_image',
                                              tf.concat([images_summary, labels_summary, predict_summary,gt_att_summary, predicted_att_summary], 2),
                                              max_outputs=SAVE_NUM_IMAGES))
