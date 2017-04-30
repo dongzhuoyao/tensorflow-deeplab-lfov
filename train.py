@@ -137,6 +137,10 @@ def main():
     with tf.variable_scope(tf.get_variable_scope()) as scope:
         _,hed_total_cost,cam_pre,cam_gt,confidence_map = net.loss(image_batch, label_batch,weight_decay=weight_decay)
 
+    confidence_map_print = tf.Print(confidence_map, [tf.argmax(confidence_map, 1)],'argmax(confidence_map) = ', summarize=20, first_n=100)
+    cam_gt_print = tf.Print(cam_gt, [tf.argmax(cam_gt, 1)], 'argmax(cam_gt) = ',
+                                    summarize=20, first_n=100)
+
     learning_rate = tf.placeholder(tf.float32, shape=[])
     optimiser = tf.train.MomentumOptimizer(learning_rate=learning_rate,momentum=0.9)
 
@@ -233,7 +237,7 @@ def main():
         cur_lr = args.learning_rate/math.pow(10,lr_scale)
         print ("current learning rate: {}".format(cur_lr))
 
-        loss_value, _ = sess.run([hed_total_cost, optim],feed_dict={learning_rate: cur_lr})
+        _,_,loss_value, _ = sess.run([cam_gt_print,confidence_map_print,hed_total_cost, optim],feed_dict={learning_rate: cur_lr})
 
 
 
