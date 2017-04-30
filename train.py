@@ -175,7 +175,7 @@ def main():
 
     optim = optimiser.minimize(hed_total_cost, var_list=final_trainable)
 
-    seg_optim = optimiser.minimize(seg_loss, var_list=final_trainable)
+    seg_optim = optimiser.minimize(seg_loss)
 
 
     images_summary = tf.py_func(inv_preprocess, [image_batch, SAVE_NUM_IMAGES], tf.uint8)
