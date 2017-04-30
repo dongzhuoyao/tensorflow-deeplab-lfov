@@ -215,7 +215,7 @@ def main():
     config.gpu_options.allow_growth = True
     sess = tf.Session(config=config)
     init = tf.global_variables_initializer()
-    sess.run(init)
+    #sess.run(init)
 
     summary_writer = tf.summary.FileWriter(args.summay_dir, sess.graph)
     
@@ -224,7 +224,8 @@ def main():
     writeSaver = tf.train.Saver(max_to_keep=20)
     if args.restore_from is not None:
         load(readSaver, sess, args.restore_from)
-    
+
+    sess.run(init)
     # Start queue threads.
     threads = tf.train.start_queue_runners(coord=coord, sess=sess)
     
