@@ -130,68 +130,73 @@ class DeepLabLFOVModel(object):
         # Last block is the classification layer.
         for b_idx in xrange(len(dilations) - 1):
             for l_idx, dilation in enumerate(dilations[b_idx]):
-                w = self.variables[v_idx * 2]
-                b = self.variables[v_idx * 2 + 1]
-                if dilation == 1:
-                    conv = tf.nn.conv2d(current, w, strides=[1, 1, 1, 1], padding='SAME')
-                else:
-                    conv = tf.nn.atrous_conv2d(current, w, dilation, padding='SAME')
-                current = tf.nn.relu(tf.nn.bias_add(conv, b))
-                feature_map_list_for_debug.append(current)
-                v_idx += 1
+                with tf.name_scope('b{}-l{}'.format(b_idx+1,l_idx+1)):
+                    w = self.variables[v_idx * 2]
+                    b = self.variables[v_idx * 2 + 1]
+                    if dilation == 1:
+                        conv = tf.nn.conv2d(current, w, strides=[1, 1, 1, 1], padding='SAME')
+                    else:
+                        conv = tf.nn.atrous_conv2d(current, w, dilation, padding='SAME')
+                    current = tf.nn.relu(tf.nn.bias_add(conv, b))
+                    feature_map_list_for_debug.append(current)
+                    v_idx += 1
 
-            """
             if b_idx == 0:
-                w = tf.get_variable(name="block1/w", shape=[3,3,64,1],initializer=tf.contrib.layers.xavier_initializer())
-                b = tf.get_variable(name='block1/b', shape=[1], initializer=tf.contrib.layers.xavier_initializer(uniform=True))
-                block1 = tf.nn.conv2d(current,w,strides=[1,1,1,1],padding='SAME')
-                block1 = tf.nn.bias_add(block1, b)
+                with tf.name_scope('block1'):
+                    w = tf.get_variable(name="block1/w", shape=[3,3,64,1],initializer=tf.contrib.layers.xavier_initializer())
+                    b = tf.get_variable(name='block1/b', shape=[1], initializer=tf.contrib.layers.xavier_initializer(uniform=True))
+                    block1 = tf.nn.conv2d(current,w,strides=[1,1,1,1],padding='SAME')
+                    block1 = tf.nn.bias_add(block1, b)
                 #houmian tongyi jia sigmoid
             elif b_idx ==1:
-                w = tf.get_variable(name="block2/w", shape=[3, 3, 128, 1],
-                                    initializer=tf.contrib.layers.xavier_initializer())
-                b = tf.get_variable(name='block2/b', shape=[1], initializer=tf.contrib.layers.xavier_initializer(uniform=True))
-                block2 = tf.nn.conv2d(current, w, strides=[1, 1, 1, 1], padding='SAME')
-                block2 = tf.nn.bias_add(block2, b)
+                with tf.name_scope('block2'):
+                    w = tf.get_variable(name="block2/w", shape=[3, 3, 128, 1],
+                                        initializer=tf.contrib.layers.xavier_initializer())
+                    b = tf.get_variable(name='block2/b', shape=[1], initializer=tf.contrib.layers.xavier_initializer(uniform=True))
+                    block2 = tf.nn.conv2d(current, w, strides=[1, 1, 1, 1], padding='SAME')
+                    block2 = tf.nn.bias_add(block2, b)
 
-                block2 = self.upsample_double("block2/deconv1/w", block2, [tf.shape(input_batch)[0],321,321,1])
+                    block2 = self.upsample_double("block2/deconv1/w", block2, [tf.shape(input_batch)[0],321,321,1])
                 # houmian tongyi jia sigmoid
             elif b_idx ==2:
-                w = tf.get_variable(name="block3/w", shape=[3, 3, 256, 1],
-                                    initializer=tf.contrib.layers.xavier_initializer())
-                b = tf.get_variable('block3/b', [1], initializer=tf.contrib.layers.xavier_initializer(uniform=True))
-                block3 = tf.nn.conv2d(current, w, strides=[1, 1, 1, 1], padding='SAME')
-                block3 = tf.nn.bias_add(block3, b)
+                with tf.name_scope('block3'):
+                    w = tf.get_variable(name="block3/w", shape=[3, 3, 256, 1],
+                                        initializer=tf.contrib.layers.xavier_initializer())
+                    b = tf.get_variable('block3/b', [1], initializer=tf.contrib.layers.xavier_initializer(uniform=True))
+                    block3 = tf.nn.conv2d(current, w, strides=[1, 1, 1, 1], padding='SAME')
+                    block3 = tf.nn.bias_add(block3, b)
 
 
-                block3 = self.upsample_double("block3/deconv1/w", block3, [tf.shape(input_batch)[0],161,161,1])
-                block3 = self.upsample_double("block3/deconv2/w", block3, [tf.shape(input_batch)[0],321,321,1])
+                    block3 = self.upsample_double("block3/deconv1/w", block3, [tf.shape(input_batch)[0],161,161,1])
+                    block3 = self.upsample_double("block3/deconv2/w", block3, [tf.shape(input_batch)[0],321,321,1])
                 # houmian tongyi jia sigmoid
             elif b_idx ==3:
-                w = tf.get_variable(name="block4/w", shape=[3, 3, 512, 1],
-                                    initializer=tf.contrib.layers.xavier_initializer())
-                b = tf.get_variable('block4/b', [1], initializer=tf.contrib.layers.xavier_initializer(uniform=True))
-                block4 = tf.nn.conv2d(current, w, strides=[1, 1, 1, 1], padding='SAME')
-                block4 = tf.nn.bias_add(block4, b)
+                with tf.name_scope('block4'):
+                    w = tf.get_variable(name="block4/w", shape=[3, 3, 512, 1],
+                                        initializer=tf.contrib.layers.xavier_initializer())
+                    b = tf.get_variable('block4/b', [1], initializer=tf.contrib.layers.xavier_initializer(uniform=True))
+                    block4 = tf.nn.conv2d(current, w, strides=[1, 1, 1, 1], padding='SAME')
+                    block4 = tf.nn.bias_add(block4, b)
 
-                block4 = self.upsample_double("block4/deconv1/w", block4, [tf.shape(input_batch)[0],81,81,1])
-                block4 = self.upsample_double("block4/deconv2/w", block4, [tf.shape(input_batch)[0],161,161,1])
-                block4 = self.upsample_double("block4/deconv3/w", block4, [tf.shape(input_batch)[0],321,321,1])
+                    block4 = self.upsample_double("block4/deconv1/w", block4, [tf.shape(input_batch)[0],81,81,1])
+                    block4 = self.upsample_double("block4/deconv2/w", block4, [tf.shape(input_batch)[0],161,161,1])
+                    block4 = self.upsample_double("block4/deconv3/w", block4, [tf.shape(input_batch)[0],321,321,1])
                 # houmian tongyi jia sigmoid
             elif b_idx ==4:
-                w = tf.get_variable(name="block5/w", shape=[3, 3, 512, 1],
-                                    initializer=tf.contrib.layers.xavier_initializer())
-                b = tf.get_variable('block5/b', [1], initializer=tf.contrib.layers.xavier_initializer(uniform=True))
-                block5 = tf.nn.conv2d(current, w, strides=[1, 1, 1, 1], padding='SAME')
-                block5 = tf.nn.bias_add(block5, b)
+                with tf.name_scope('block5'):
+                    w = tf.get_variable(name="block5/w", shape=[3, 3, 512, 1],
+                                        initializer=tf.contrib.layers.xavier_initializer())
+                    b = tf.get_variable('block5/b', [1], initializer=tf.contrib.layers.xavier_initializer(uniform=True))
+                    block5 = tf.nn.conv2d(current, w, strides=[1, 1, 1, 1], padding='SAME')
+                    block5 = tf.nn.bias_add(block5, b)
 
-                block5 = self.upsample_double("block5/deconv1/w", block5, [tf.shape(input_batch)[0],81,81,1])
-                block5 = self.upsample_double("block5/deconv2/w", block5, [tf.shape(input_batch)[0],161,161,1])
-                block5 = self.upsample_double("block5/deconv3/w", block5, [tf.shape(input_batch)[0],321,321,1])
+                    block5 = self.upsample_double("block5/deconv1/w", block5, [tf.shape(input_batch)[0],81,81,1])
+                    block5 = self.upsample_double("block5/deconv2/w", block5, [tf.shape(input_batch)[0],161,161,1])
+                    block5 = self.upsample_double("block5/deconv3/w", block5, [tf.shape(input_batch)[0],321,321,1])
                 # houmian tongyi jia sigmoid
             else:
                 pass
-            """
+
 
             # Optional pooling and dropout after each block.
             if b_idx < 3:
@@ -227,12 +232,12 @@ class DeepLabLFOVModel(object):
         conv = tf.nn.conv2d(current, w, strides=[1, 1, 1, 1], padding='SAME')
         current = tf.nn.bias_add(conv, b)
 
-        """
-        w_final_map = tf.get_variable(name="block_main/w", shape=[3, 3, 5, 1],
-                            initializer=tf.contrib.layers.xavier_initializer())
-        b_final_map = tf.get_variable('block_main/b', [1], initializer=tf.contrib.layers.xavier_initializer(uniform=True))
-        final_map = tf.nn.conv2d(tf.concat([block1, block2, block3, block4, block5], 3),w_final_map,strides=[1, 1, 1, 1], padding='SAME')
-        final_map = tf.nn.bias_add(final_map, b_final_map)
+        with tf.name_scope('fusion_block'):
+            w_final_map = tf.get_variable(name="block_main/w", shape=[3, 3, 5, 1],
+                                initializer=tf.contrib.layers.xavier_initializer())
+            b_final_map = tf.get_variable('block_main/b', [1], initializer=tf.contrib.layers.xavier_initializer(uniform=True))
+            final_map = tf.nn.conv2d(tf.concat([block1, block2, block3, block4, block5], 3),w_final_map,strides=[1, 1, 1, 1], padding='SAME')
+            final_map = tf.nn.bias_add(final_map, b_final_map)
 
         print("====feature map check====")
         for v in feature_map_list_for_debug:
@@ -240,8 +245,6 @@ class DeepLabLFOVModel(object):
 
 
         return current,[block1, block2, block3, block4, block5,final_map]
-        """
-        return current
     
     def prepare_label(self, input_batch, new_size):
         """Resize masks and perform one-hot encoding.
@@ -285,8 +288,7 @@ class DeepLabLFOVModel(object):
         Returns:
           Pixel-wise softmax loss.
         """
-        #raw_output,hed_predict_list = self._create_network(tf.cast(img_batch, tf.float32), keep_prob=keep_prob)
-        raw_output = self._create_network(tf.cast(img_batch, tf.float32), keep_prob=keep_prob)
+        raw_output,hed_predict_list = self._create_network(tf.cast(img_batch, tf.float32), keep_prob=keep_prob)
         prediction = tf.reshape(raw_output, [-1, n_classes])
 
         org_label_batch = label_batch
@@ -325,7 +327,6 @@ class DeepLabLFOVModel(object):
         assert_op_2 = tf.Assert(tf.less_equal(tf.reduce_max(confidence_map), 1.), [confidence_map])
 
 
-        """
         #confusion attention map loss
         costs = []
         for idx, b in enumerate(hed_predict_list):
@@ -341,5 +342,3 @@ class DeepLabLFOVModel(object):
 
         with tf.control_dependencies([assert_op, assert_op_2]):
             return reduced_loss,hed_total_cost,predict_4d_label,b,attention_map_gt,confidence_map,predict_4d
-        """
-        return reduced_loss
