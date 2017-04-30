@@ -135,7 +135,7 @@ def main():
 
     # Define the loss and optimisation parameters.
     with tf.variable_scope(tf.get_variable_scope()) as scope:
-        _,hed_total_cost,cam_pre,cam_gt,confidence_map = net.loss(image_batch, label_batch,weight_decay=0.05)
+        _,hed_total_cost,cam_pre,cam_gt,confidence_map,predict_4d_label = net.loss(image_batch, label_batch,weight_decay=0.05)
     learning_rate = tf.placeholder(tf.float32, shape=[])
     optimiser = tf.train.MomentumOptimizer(learning_rate=learning_rate,momentum=0.9)
 
@@ -164,8 +164,8 @@ def main():
 
     images_summary = tf.py_func(inv_preprocess, [image_batch, SAVE_NUM_IMAGES], tf.uint8)
     labels_summary = tf.py_func(decode_labels_by_batch, [label_batch, SAVE_NUM_IMAGES], tf.uint8)
+    predict_summary = tf.py_func(decode_labels_by_batch, [predict_4d_label, SAVE_NUM_IMAGES], tf.uint8)
 
-    gt_att_summary = tf.py_func(single_channel_process, [cam_gt, SAVE_NUM_IMAGES], tf.uint8)
     gt_att_summary = tf.py_func(single_channel_process, [cam_gt, SAVE_NUM_IMAGES], tf.uint8)
     predicted_att_summary = tf.py_func(single_channel_process, [cam_pre, SAVE_NUM_IMAGES], tf.uint8)
     confidence_summay = tf.py_func(single_channel_process, [confidence_map, SAVE_NUM_IMAGES], tf.uint8)
@@ -183,8 +183,7 @@ def main():
         # origin_summary = tf.summary.image("origin", images_summary)
         # label_summary = tf.summary.image("label", labels_summary)
         summary_list.append(tf.summary.image('total_image',
-                                             tf.concat([images_summary, labels_summary, gt_att_summary, predicted_att_summary,
-                                                        predicted_att_summary], 2),
+                                             tf.concat([images_summary, labels_summary,predict_summary, gt_att_summary, predicted_att_summary], 2),
                                              max_outputs=SAVE_NUM_IMAGES))
 
         summary_list.append(tf.summary.image('confidence_map',

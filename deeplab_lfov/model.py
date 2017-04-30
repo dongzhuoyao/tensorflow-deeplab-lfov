@@ -286,4 +286,4 @@ class DeepLabLFOVModel(object):
             costs.append(bcost)
         hed_total_cost = tf.add_n(costs, name='hed-total-loss')
 
-        return reduced_loss,hed_total_cost,b,attention_map_gt,confidence_map
+        return reduced_loss,hed_total_cost,b,attention_map_gt,confidence_map,predict_4d_label
