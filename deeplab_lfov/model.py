@@ -142,14 +142,14 @@ class DeepLabLFOVModel(object):
 
             if b_idx == 0:
                 w = tf.get_variable(name="block1/w", shape=[3,3,64,1],initializer=tf.contrib.layers.xavier_initializer())
-                b = tf.get_variable('block1/b', [1], initializer=tf.contrib.layers.xavier_initializer(uniform=True))
+                b = tf.get_variable(name='block1/b', shape=[1], initializer=tf.contrib.layers.xavier_initializer(uniform=True))
                 block1 = tf.nn.conv2d(current,w,strides=[1,1,1,1],padding='SAME')
                 block1 = tf.nn.bias_add(block1, b)
                 #houmian tongyi jia sigmoid
             elif b_idx ==1:
                 w = tf.get_variable(name="block2/w", shape=[3, 3, 128, 1],
                                     initializer=tf.contrib.layers.xavier_initializer())
-                b = tf.get_variable('block2/b', [1], initializer=tf.contrib.layers.xavier_initializer(uniform=True))
+                b = tf.get_variable(name='block2/b', shape=[1], initializer=tf.contrib.layers.xavier_initializer(uniform=True))
                 block2 = tf.nn.conv2d(current, w, strides=[1, 1, 1, 1], padding='SAME')
                 block2 = tf.nn.bias_add(block2, b)
 
@@ -272,7 +272,7 @@ class DeepLabLFOVModel(object):
         return tf.cast(raw_output, tf.uint8)
 
     
-    def loss(self, img_batch, label_batch,weight_decay = 0.05):
+    def loss(self, img_batch, label_batch,weight_decay = 0.05,keep_prob=tf.constant(1.0)):#notice keep_prob when predict!!
         """Create the network, run inference on the input batch and compute loss.
         
         Args:
@@ -281,7 +281,7 @@ class DeepLabLFOVModel(object):
         Returns:
           Pixel-wise softmax loss.
         """
-        raw_output,hed_predict_list = self._create_network(tf.cast(img_batch, tf.float32), keep_prob=tf.constant(1.0))
+        raw_output,hed_predict_list = self._create_network(tf.cast(img_batch, tf.float32), keep_prob=keep_prob)
         prediction = tf.reshape(raw_output, [-1, n_classes])
 
         org_label_batch = label_batch
@@ -302,10 +302,11 @@ class DeepLabLFOVModel(object):
         gt_4d_label = tf.cast(gt_4d_label, tf.uint8)
 
         predict_4d = tf.image.resize_bilinear(raw_output, tf.shape(img_batch)[1:3, ])
-        predict_4d = tf.nn.softmax(predict_4d) #convert to number between 0-1
+        #predict_4d = tf.nn.softmax(predict_4d) #convert to number between 0-1
         predict_4d_label = tf.expand_dims(tf.argmax(predict_4d, dimension=3),dim=3)
         predict_4d_label = tf.cast(predict_4d_label, tf.uint8)
 
+        predict_4d = tf.nn.softmax(predict_4d)  # convert to number between 0-1
         predict_4d_pro = confidence_map =  tf.reduce_max(predict_4d, keep_dims=True, axis=3)
         predict_4d_pro_inverse = tf.subtract(tf.constant(1.0), predict_4d_pro)
 
