@@ -137,8 +137,8 @@ def main():
     with tf.variable_scope(tf.get_variable_scope()) as scope:
         _,hed_total_cost,cam_pre,cam_gt,confidence_map = net.loss(image_batch, label_batch,weight_decay=weight_decay)
 
-    confidence_map_print = tf.Print(confidence_map, [tf.argmax(confidence_map, 1)],'argmax(confidence_map) = ', summarize=20, first_n=100)
-    cam_gt_print = tf.Print(cam_gt, [tf.argmax(cam_gt, 1)], 'argmax(cam_gt) = ',
+    confidence_map_print = tf.Print(confidence_map, [tf.reduce_max(confidence_map)],'argmax(confidence_map) = ', summarize=20, first_n=100)
+    cam_gt_print = tf.Print(cam_gt, [tf.reduce_max(cam_gt)], 'argmax(cam_gt) = ',
                                     summarize=20, first_n=100)
 
     learning_rate = tf.placeholder(tf.float32, shape=[])
@@ -186,8 +186,8 @@ def main():
 
     # define Summary
     summary_list = []
-    for var in tf.trainable_variables():
-        summary_list.append(tf.summary.histogram(var.op.name + "/values", var))
+    #for var in tf.trainable_variables():
+    #    summary_list.append(tf.summary.histogram(var.op.name + "/values", var))
 
     summary_list.append(tf.summary.histogram('cam_gt', cam_gt))
     summary_list.append(tf.summary.histogram('confidence_map', confidence_map))
