@@ -312,5 +312,10 @@ class DeepLabLFOVModel(object):
             costs.append(bcost)
         hed_total_cost = tf.add_n(costs, name='hed-total-loss')
 
+        tf.summary.histogram('att_4d', att_4d)
+        tf.summary.histogram('att_4d_inverse', att_4d_inverse)
+        tf.summary.histogram('predict_4d_pro', predict_4d_pro)
+        tf.summary.histogram('predict_4d_pro_inverse', predict_4d_pro_inverse)
+
         with tf.control_dependencies([assert_op, assert_op_2]):
             return reduced_loss,hed_total_cost,b,attention_map_gt,confidence_map

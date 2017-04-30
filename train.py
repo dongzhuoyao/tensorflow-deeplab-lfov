@@ -207,7 +207,7 @@ def main():
                                              tf.concat([images_summary, labels_summary, confidence_summay], 2),
                                              max_outputs=SAVE_NUM_IMAGES))
 
-    merged_summary_op = tf.summary.merge(summary_list)
+    merged_summary_op = tf.summary.merge_all()
 
 
 
