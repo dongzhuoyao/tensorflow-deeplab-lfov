@@ -135,7 +135,7 @@ def main():
 
     # Define the loss and optimisation parameters.
     with tf.variable_scope(tf.get_variable_scope()) as scope:
-        _,hed_total_cost,predict_4d_label,cam_pre,cam_gt,confidence_map,predict_4d = net.loss(image_batch, label_batch,weight_decay=weight_decay)
+        seg_loss,hed_total_cost,predict_4d_label,cam_pre,cam_gt,confidence_map,predict_4d = net.loss(image_batch, label_batch,weight_decay=weight_decay)
 
     confidence_map_print = tf.Print(confidence_map, [tf.nn.top_k(confidence_map,k=1)[0]],'reduce_max(confidence_map) = ', summarize=20, first_n=100)
     cam_gt_print = tf.Print(cam_gt, [tf.nn.top_k(predict_4d,k=10)[0]], 'top_k(predict_4d) = ',summarize=20, first_n=100)
@@ -174,6 +174,9 @@ def main():
 
 
     optim = optimiser.minimize(hed_total_cost, var_list=final_trainable)
+
+    seg_optim = optimiser.minimize(seg_loss, var_list=final_trainable)
+
 
     images_summary = tf.py_func(inv_preprocess, [image_batch, SAVE_NUM_IMAGES], tf.uint8)
     labels_summary = tf.py_func(decode_labels_by_batch, [label_batch, SAVE_NUM_IMAGES], tf.uint8)
@@ -240,7 +243,7 @@ def main():
         cur_lr = args.learning_rate/math.pow(10,lr_scale)
         print ("current learning rate: {}".format(cur_lr))
 
-        _,_,loss_value, _ = sess.run([cam_gt_print,confidence_map_print,hed_total_cost, optim],feed_dict={learning_rate: cur_lr})
+        _,_,loss_value, _ = sess.run([cam_gt_print,confidence_map_print,hed_total_cost, seg_optim],feed_dict={learning_rate: cur_lr})
 
 
 
