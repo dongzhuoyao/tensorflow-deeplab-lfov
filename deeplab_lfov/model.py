@@ -256,6 +256,21 @@ class DeepLabLFOVModel(object):
             input_batch = tf.one_hot(input_batch, depth=21)
         return input_batch
 
+    def preds(self, input_batch):
+        """Create the network and run inference on the input batch.
+
+        Args:
+          input_batch: batch of pre-processed images.
+
+        Returns:
+          Argmax over the predictions of the network of the same shape as the input.
+        """
+        raw_output,hed_predict_list = self._create_network(tf.cast(input_batch, tf.float32), keep_prob=tf.constant(1.0))
+        raw_output = tf.image.resize_bilinear(raw_output, tf.shape(input_batch)[1:3, ])
+        raw_output = tf.argmax(raw_output, dimension=3)
+        raw_output = tf.expand_dims(raw_output, dim=3)  # Create 4D-tensor.
+        return tf.cast(raw_output, tf.uint8)
+
     
     def loss(self, img_batch, label_batch,weight_decay = 0.05):
         """Create the network, run inference on the input batch and compute loss.
@@ -266,7 +281,7 @@ class DeepLabLFOVModel(object):
         Returns:
           Pixel-wise softmax loss.
         """
-        raw_output,hed_predict_list = self._create_network(tf.cast(img_batch, tf.float32), keep_prob=tf.constant(0.5))
+        raw_output,hed_predict_list = self._create_network(tf.cast(img_batch, tf.float32), keep_prob=tf.constant(1))
         prediction = tf.reshape(raw_output, [-1, n_classes])
 
         org_label_batch = label_batch

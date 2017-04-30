@@ -216,8 +216,8 @@ def main():
     config.gpu_options.allow_growth = True
     sess = tf.Session(config=config)
     init = tf.global_variables_initializer()
-    
     sess.run(init)
+
     summary_writer = tf.summary.FileWriter(args.summay_dir, sess.graph)
     
     # Saver for storing checkpoints of the model.
