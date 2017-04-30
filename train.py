@@ -164,7 +164,7 @@ def main():
     for v in final_trainable:
         print("{}:  {}".format(v.name, v.get_shape()))
 
-    frozen_trainalbe = [u'conv1_', u'conv2_', u'conv3_', u'conv4_', u'conv5_', u'fc6_', u'fc7_', u'fc8_']
+    frozen_trainalbe = [u'conv1_', u'conv2_', u'conv3_', u'conv4_', u'conv5_', u'fc6', u'fc7', u'fc8_']
     recover_variables = []
     for f in frozen_trainalbe:
         recover_variables.extend([x for x in tf.global_variables() if f in x.name])
