@@ -335,8 +335,9 @@ class DeepLabLFOVModel(object):
                 b = tf.nn.sigmoid(b, name='hed-output{}'.format(idx + 1))
                 square_result = tf.square(b - attention_map_gt)
                 attention_weight = tf.reshape(attention_map_gt,[16 , -1])
-                attention_fenmu = tf.reduce_sum(attention_weight,axis=1,keep_dims=True)
-                attention_weight = tf.div(attention_weight,attention_fenmu)
+                attention_weight = tf.nn.softmax(attention_weight)
+                #attention_fenmu = tf.reduce_sum(attention_weight,axis=1,keep_dims=True)
+                #attention_weight = tf.div(attention_weight,attention_fenmu)
 
                 attention_weight = tf.reshape(attention_weight,tf.shape(img_batch)[0:3])
                 attention_weight =tf.expand_dims(attention_weight,dim=3)
