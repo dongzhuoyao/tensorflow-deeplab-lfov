@@ -30,7 +30,7 @@ BATCH_SIZE = 16
 DATA_DIRECTORY = '/home/VOCdevkit'
 DATA_LIST_PATH = './dataset/train.txt'
 INPUT_SIZE = '321,321'
-LEARNING_RATE = 1e-4
+LEARNING_RATE = 1e-6
 MEAN_IMG = tf.Variable(np.array((104.00698793,116.66876762,122.67891434)), trainable=False, dtype=tf.float32)
 NUM_STEPS = 20000000
 RANDOM_SCALE = True
@@ -39,7 +39,7 @@ SAVE_DIR = './images/'
 SAVE_NUM_IMAGES = 2
 SAVE_PRED_EVERY = 500
 SUMMARY_FREQ = 50
-
+weight_decay = 0.0002
 SNAPSHOT_DIR = './snapshots/'
 WEIGHTS_PATH   = None
 
@@ -135,9 +135,18 @@ def main():
 
     # Define the loss and optimisation parameters.
     with tf.variable_scope(tf.get_variable_scope()) as scope:
-        _,hed_total_cost,cam_pre,cam_gt,confidence_map = net.loss(image_batch, label_batch,weight_decay=0.05)
+        _,hed_total_cost,cam_pre,cam_gt,confidence_map = net.loss(image_batch, label_batch,weight_decay=weight_decay)
     learning_rate = tf.placeholder(tf.float32, shape=[])
     optimiser = tf.train.MomentumOptimizer(learning_rate=learning_rate,momentum=0.9)
+
+    #regularization
+    regularization_list = [v for v in tf.global_variables() if 'w'  in v.name]
+    print("====regularization_list  check====")
+    for v in regularization_list:
+        print("{}:  {}".format(v.name, v.get_shape()))
+
+    lossL2 = tf.add_n([tf.nn.l2_loss(v) for v in regularization_list]) *weight_decay
+    hed_total_cost = hed_total_cost+lossL2
 
     print("====global variable shape check====")
     for v in tf.global_variables():
@@ -145,13 +154,13 @@ def main():
 
     frozen_trainalbe = [u'conv1', u'conv2', u'conv3', u'conv4', u'conv5', u'fc6', u'fc7', u'fc8']
     final_trainable = tf.global_variables()
-    for f in frozen_trainalbe:
-        final_trainable = [x for x in final_trainable if f not in x.name]
+    #for f in frozen_trainalbe:
+    #    final_trainable = [x for x in final_trainable if f not in x.name]
     print("====trainable shape check====")
     for v in final_trainable:
         print("{}:  {}".format(v.name, v.get_shape()))
 
-    frozen_trainalbe = [u'conv1', u'conv2', u'conv3', u'conv4', u'conv5', u'fc6', u'fc7', u'fc8']
+    frozen_trainalbe = [u'conv1_', u'conv2_', u'conv3_', u'conv4_', u'conv5_', u'fc6_', u'fc7_', u'fc8_']
     recover_variables = []
     for f in frozen_trainalbe:
         recover_variables.extend([x for x in tf.global_variables() if f in x.name])
@@ -165,7 +174,7 @@ def main():
     images_summary = tf.py_func(inv_preprocess, [image_batch, SAVE_NUM_IMAGES], tf.uint8)
     labels_summary = tf.py_func(decode_labels_by_batch, [label_batch, SAVE_NUM_IMAGES], tf.uint8)
 
-    gt_att_summary = tf.py_func(single_channel_process, [cam_gt, SAVE_NUM_IMAGES], tf.uint8)
+
     gt_att_summary = tf.py_func(single_channel_process, [cam_gt, SAVE_NUM_IMAGES], tf.uint8)
     predicted_att_summary = tf.py_func(single_channel_process, [cam_pre, SAVE_NUM_IMAGES], tf.uint8)
     confidence_summay = tf.py_func(single_channel_process, [confidence_map, SAVE_NUM_IMAGES], tf.uint8)
@@ -220,11 +229,13 @@ def main():
     for step in range(args.num_steps):
         start_time = time.time()
         #get learning rate
-        lr_scale = math.floor(step/3000);
+        lr_scale = math.floor(step/4000);
         cur_lr = args.learning_rate/math.pow(10,lr_scale)
         print ("current learning rate: {}".format(cur_lr))
 
         loss_value, _ = sess.run([hed_total_cost, optim],feed_dict={learning_rate: cur_lr})
+
+
 
         if step % args.save_pred_every == 0:
             save(writeSaver, sess, args.snapshot_dir, step)

@@ -95,7 +95,14 @@ class DeepLabLFOVModel(object):
                     b = create_bias_variable(name, list(shape))
                     var.append(b)
         return var
-    
+
+    def upsample_double(self, name, current, output_shape):
+        w = tf.get_variable(name=name, shape=[3, 3, 1, 1],
+                            initializer=tf.contrib.layers.xavier_initializer())
+        current = tf.nn.conv2d_transpose(current, w,
+                                        output_shape=output_shape,
+                                        strides=[1, 2, 2, 1], padding="SAME")
+        return current
     
     def _create_network(self, input_batch, keep_prob):
         """Construct DeepLab-LargeFOV network.
@@ -134,32 +141,43 @@ class DeepLabLFOVModel(object):
                                     initializer=tf.contrib.layers.xavier_initializer())
                 b = tf.get_variable('block2/b', [1], initializer=tf.contrib.layers.xavier_initializer(uniform=True))
                 block2 = tf.nn.conv2d(current, w, strides=[1, 1, 1, 1], padding='SAME')
-                block2 = tf.image.resize_bilinear(block2, tf.shape(input_batch)[1:3, ])
                 block2 = tf.nn.bias_add(block2, b)
+
+                block2 = self.upsample_double("block2/deconv1/w", block2, tf.shape(input_batch)[:])
                 # houmian tongyi jia sigmoid
             elif b_idx ==2:
                 w = tf.get_variable(name="block3/w", shape=[3, 3, 256, 1],
                                     initializer=tf.contrib.layers.xavier_initializer())
                 b = tf.get_variable('block3/b', [1], initializer=tf.contrib.layers.xavier_initializer(uniform=True))
                 block3 = tf.nn.conv2d(current, w, strides=[1, 1, 1, 1], padding='SAME')
-                block3 = tf.image.resize_bilinear(block3, tf.shape(input_batch)[1:3, ])
                 block3 = tf.nn.bias_add(block3, b)
+
+
+                block3 = self.upsample_double("block3/deconv1/w", block3, tf.shape(input_batch)[:])
+                block3 = self.upsample_double("block3/deconv2/w", block3, tf.shape(input_batch)[:])
                 # houmian tongyi jia sigmoid
             elif b_idx ==3:
                 w = tf.get_variable(name="block4/w", shape=[3, 3, 512, 1],
                                     initializer=tf.contrib.layers.xavier_initializer())
                 b = tf.get_variable('block4/b', [1], initializer=tf.contrib.layers.xavier_initializer(uniform=True))
                 block4 = tf.nn.conv2d(current, w, strides=[1, 1, 1, 1], padding='SAME')
-                block4 = tf.image.resize_bilinear(block4, tf.shape(input_batch)[1:3, ])
                 block4 = tf.nn.bias_add(block4, b)
+
+                block4 = self.upsample_double("block4/deconv1/w", block4, tf.shape(input_batch)[:])
+                block4 = self.upsample_double("block4/deconv2/w", block4, tf.shape(input_batch)[:])
+                block4 = self.upsample_double("block4/deconv3/w", block4, tf.shape(input_batch)[:])
                 # houmian tongyi jia sigmoid
             elif b_idx ==4:
                 w = tf.get_variable(name="block5/w", shape=[3, 3, 512, 1],
                                     initializer=tf.contrib.layers.xavier_initializer())
                 b = tf.get_variable('block5/b', [1], initializer=tf.contrib.layers.xavier_initializer(uniform=True))
                 block5 = tf.nn.conv2d(current, w, strides=[1, 1, 1, 1], padding='SAME')
-                block5 = tf.image.resize_bilinear(block5, tf.shape(input_batch)[1:3, ])
                 block5 = tf.nn.bias_add(block5, b)
+
+                block5 = self.upsample_double("block5/deconv1/w", block5, tf.shape(input_batch)[:])
+                block5 = self.upsample_double("block5/deconv2/w", block5, tf.shape(input_batch)[:])
+                block5 = self.upsample_double("block5/deconv3/w", block5, tf.shape(input_batch)[:])
+                block5 = self.upsample_double("block5/deconv4/w", block5, tf.shape(input_batch)[:])
                 # houmian tongyi jia sigmoid
             else:
                 pass
