@@ -36,7 +36,7 @@ NUM_STEPS = 20000000
 RANDOM_SCALE = True
 RESTORE_FROM = './deeplab_lfov.ckpt'
 SAVE_DIR = './images/'
-SAVE_NUM_IMAGES = 2
+SAVE_NUM_IMAGES = 4
 SAVE_PRED_EVERY = 500
 SUMMARY_FREQ = 50
 weight_decay = 0.0002
@@ -140,7 +140,7 @@ def main():
     optimiser = tf.train.MomentumOptimizer(learning_rate=learning_rate,momentum=0.9)
 
     #regularization
-    regularization_list = [v for v in tf.global_variables() if 'w'  in v.name]
+    regularization_list = [v for v in tf.global_variables() if 'block'  in v.name]
     print("====regularization_list  check====")
     for v in regularization_list:
         print("{}:  {}".format(v.name, v.get_shape()))
@@ -154,8 +154,8 @@ def main():
 
     frozen_trainalbe = [u'conv1', u'conv2', u'conv3', u'conv4', u'conv5', u'fc6', u'fc7', u'fc8']
     final_trainable = tf.global_variables()
-    #for f in frozen_trainalbe:
-    #    final_trainable = [x for x in final_trainable if f not in x.name]
+    for f in frozen_trainalbe:
+        final_trainable = [x for x in final_trainable if f not in x.name]
     print("====trainable shape check====")
     for v in final_trainable:
         print("{}:  {}".format(v.name, v.get_shape()))
@@ -192,8 +192,7 @@ def main():
         # origin_summary = tf.summary.image("origin", images_summary)
         # label_summary = tf.summary.image("label", labels_summary)
         summary_list.append(tf.summary.image('total_image',
-                                             tf.concat([images_summary, labels_summary, gt_att_summary, predicted_att_summary,
-                                                        predicted_att_summary], 2),
+                                             tf.concat([images_summary, labels_summary, gt_att_summary, predicted_att_summary], 2),
                                              max_outputs=SAVE_NUM_IMAGES))
 
         summary_list.append(tf.summary.image('confidence_map',
