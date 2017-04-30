@@ -340,10 +340,11 @@ class DeepLabLFOVModel(object):
 
                 attention_weight = tf.reshape(attention_weight,tf.shape(img_batch)[0:3])
                 attention_weight =tf.expand_dims(attention_weight,dim=3)
-
                 bcost = tf.multiply(attention_weight,square_result)
+                bcost =tf.reduce_sum(bcost)
 
                 costs.append(bcost)
+
             hed_loss = tf.add_n(costs, name='hed-total-loss')
 
         tf.summary.histogram('att_4d', att_4d)
