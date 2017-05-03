@@ -26,6 +26,7 @@ def single_channel_process(imgs, num_images):
     Returns:
       The batch of the size num_images with the same spatial dimensions as the input.
     """
+    print("imgs.shape: {}".format(imgs.shape))
     n, h, w, c = imgs.shape#c=1,because attention map has only one channel
     #print ("single_channel_process imgs.shape: {}".format(imgs.shape))
 
