@@ -98,18 +98,18 @@ def main():
 
     for i,line in enumerate(test_img_list):
         tmp = line.split(" ")
+        tmp[0] = tmp[0][1:]#delete first /
+        tmp[1] = tmp[1][1:]
         image_path = os.path.join(args.img_path,tmp[0])
         label_path = os.path.join(args.img_path,tmp[1])
-        image = cv2.imread(os.path.join(args.save_dir,image_path))
-        label = cv2.imread(os.path.join(args.save_dir,label_path))
-
-        test_img_list = [os.path.join(args.img_path, tmp.split(" ")[0][1:]) for tmp in test_img_list]
+        image = cv2.imread(image_path)
+        label = cv2.imread(label_path)
 
         fig, axes = plt.subplots(1, 3, figsize=(5, 15))
         preds = sess.run([pred],feed_dict={img_path:image_path})
 
         msk = decode_labels(np.array(preds)[0, 0, :, :, 0])
-        im = Image.fromarray(msk)
+        
         img_name = os.path.basename(image_path)
         img_name = img_name.replace("jpg", "png")
 
