@@ -115,7 +115,7 @@ def main():
         pred_result,confidence_result = sess.run([pred,confidence], feed_dict={img_path:image_path})
         #pre_result is a list!!!
         pred_result = np.array(pred_result)[0, :, :, 0]
-        confidence_result = np.array(confidence_result)[0, :, :, 0]
+        #confidence_result = np.array(confidence_result)[0, :, :, 0]
         print("np.array(pred_result) shape: {}".format(pred_result.shape))
 
         wrong = np.not_equal(pred_result.astype(np.uint8),label.astype(np.uint8))*255
@@ -151,7 +151,7 @@ def main():
 
         axes.flat[5].axis('off')
         axes.flat[5].set_title('confidence map')
-        axes.flat[5].imshow(single_channel_process(confidence_result,1)[0,:,:,:],cmap='gray')
+        axes.flat[5].imshow((single_channel_process(confidence_result,1))[0,:,:,:],cmap='gray')
 
 
         print('The output file has been saved to {}'.format(os.path.join(args.save_dir,img_name)))
