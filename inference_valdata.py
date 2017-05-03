@@ -139,7 +139,7 @@ def main():
 
         axes.flat[3].axis('off')
         axes.flat[3].set_title('wrong')
-        axes.flat[3].imshow(wrong.astype(np.uint8))
+        axes.flat[3].imshow(wrong.astype(np.uint8),cmap='gray')
 
 
         print('The output file has been saved to {}'.format(os.path.join(args.save_dir,img_name)))
