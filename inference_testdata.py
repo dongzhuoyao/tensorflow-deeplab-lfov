@@ -68,7 +68,7 @@ def main():
     trainable = tf.trainable_variables()
     
     # Predictions.
-    pred = net.preds(tf.expand_dims(img, dim=0))
+    pred,_ = net.preds(tf.expand_dims(img, dim=0))
       
     # Set up TF session and initialize variables. 
     config = tf.ConfigProto()
@@ -86,8 +86,8 @@ def main():
     for current_img_path in test_img_list:
 
         preds = sess.run([pred],feed_dict={img_path:current_img_path})
-
-        msk = decode_labels(np.array(preds)[0, 0, :, :, 0],real=True)
+        tmp = np.array(preds)[0, 0, :, :, 0]
+        msk = decode_labels(tmp,real=True)
         im = Image.fromarray(msk)
         if not os.path.exists(args.save_dir):
             os.makedirs(args.save_dir)
