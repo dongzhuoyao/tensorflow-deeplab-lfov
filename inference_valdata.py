@@ -108,7 +108,7 @@ def main():
         fig, axes = plt.subplots(1, 3, figsize=(15,5))
         pred_result = sess.run([pred], feed_dict={img_path:image_path})
 
-        print("predict shape: {}".format(pred_result.shape))
+        #print("predict shape: {}".format(pred_result))
         msk = decode_labels(np.array(pred_result)[0, 0, :, :, 0])
 
         img_name = os.path.basename(image_path)
