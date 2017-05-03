@@ -106,31 +106,39 @@ def main():
         image = cv2.imread(image_path)
         label = cv2.imread(label_path,0)
 
-        fig, axes = plt.subplots(1, 3, figsize=(15,5))
+        fig, axes = plt.subplots(1, 3, figsize=(15,10))
         fig.patch.set_visible(False)#http://stackoverflow.com/questions/14908576/how-to-remove-frame-from-matplotlib-pyplot-figure-vs-matplotlib-figure-frame
 
 
 
         pred_result = sess.run([pred], feed_dict={img_path:image_path})
         #pre_result is a list!!!
+        pred_result = np.array(pred_result)[0,0, :, :, 0]
+        print("np.array(pred_result) shape: {}".format(pred_result.shape))
 
-        tt =np.array(pred_result)
-        print("np.array(pred_result) shape: {}".format(tt.shape))
+        wrong = np.not_equal(pred_result,label)*255
+
+
 
         img_name = os.path.basename(image_path)
         img_name = img_name.replace("jpg", "png")
 
-        axes.flat[0].axis('off')
+
         axes.flat[0].set_title('data')
         axes.flat[0].imshow(image.astype(np.uint8))
 
-        axes.flat[1].axis('off')
+
         axes.flat[1].set_title('mask')
         axes.flat[1].imshow(decode_labels(label))
 
-        axes.flat[1].axis('off')
+
         axes.flat[2].set_title('pred')
-        axes.flat[2].imshow(decode_labels(np.array(pred_result)[0,0, :, :, 0]))
+        axes.flat[2].imshow(decode_labels(pred_result))
+
+        axes.flat[3].set_title('wrong')
+        axes.flat[3].imshow(wrong.astype(np.uint8))
+
+
         print('The output file has been saved to {}'.format(os.path.join(args.save_dir,img_name)))
         plt.savefig(os.path.join(args.save_dir,img_name))
         plt.close(fig)
