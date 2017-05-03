@@ -109,14 +109,14 @@ def main():
         preds = sess.run([pred],feed_dict={img_path:image_path})
 
         msk = decode_labels(np.array(preds)[0, 0, :, :, 0])
-        
+
         img_name = os.path.basename(image_path)
         img_name = img_name.replace("jpg", "png")
 
         #im.save(os.path.join(args.save_dir,img_name))
 
         axes.flat[i * 3].set_title('data')
-        axes.flat[i * 3].imshow(image).astype(np.uint8)
+        axes.flat[i * 3].imshow(image.astype(np.uint8))
 
         axes.flat[i * 3 + 1].set_title('mask')
         axes.flat[i * 3 + 1].imshow(label)
