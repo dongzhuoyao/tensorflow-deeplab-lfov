@@ -13,7 +13,7 @@ label_colours = [(0,0,0)
                 ,(0,64,0),(128,64,0),(0,192,0),(128,192,0),(0,64,128)]
                 # 16=potted plant, 17=sheep, 18=sofa, 19=train, 20=tv/monitor
     
-def decode_labels(mask,real=False):
+def decode_labels(mask,real=False,show_confusion=False):
     """Decode batch of segmentation masks.
     
     Args:
@@ -31,6 +31,11 @@ def decode_labels(mask,real=False):
                     pixels[k_, j_] = (k,k,k)
                 else:
                     pixels[k_,j_] = label_colours[k]
+            else:
+                if show_confusion:
+                    pixels[k_, j_]=(255,255,255)
+                else:
+                    pass
     return np.array(img)
 
 
