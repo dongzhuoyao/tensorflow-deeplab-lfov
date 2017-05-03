@@ -106,9 +106,9 @@ def main():
         label = cv2.imread(label_path)
 
         fig, axes = plt.subplots(1, 3, figsize=(5, 15))
-        preds = sess.run([pred],feed_dict={img_path:image_path})
+        pred_result = sess.run([pred], feed_dict={img_path:image_path})
 
-        msk = decode_labels(np.array(preds)[0, 0, :, :, 0])
+        msk = decode_labels(np.array(pred_result)[0, 0, :, :, 0])
 
         img_name = os.path.basename(image_path)
         img_name = img_name.replace("jpg", "png")
@@ -122,7 +122,7 @@ def main():
         axes.flat[i * 3 + 1].imshow(label)
 
         axes.flat[i * 3 + 2].set_title('pred')
-        axes.flat[i * 3 + 2].imshow(decode_labels(preds[i, :, :, 0]))
+        axes.flat[i * 3 + 2].imshow(decode_labels(np.array(pred_result)[0, :, :, 0]))
         print('The output file has been saved to {}'.format(os.path.join(args.save_dir,img_name)))
         plt.savefig(os.path.join(args.save_dir,img_name))
         plt.close(fig)
