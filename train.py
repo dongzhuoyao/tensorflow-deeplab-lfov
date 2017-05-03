@@ -127,7 +127,7 @@ def main():
     trainable = tf.trainable_variables()
     optim = optimiser.minimize(loss, var_list=trainable)
     
-    pred = net.preds(image_batch)
+    pred,_ = net.preds(image_batch)
     
     # Set up tf session and initialize variables. 
     config = tf.ConfigProto()
@@ -160,7 +160,7 @@ def main():
         if step % args.save_pred_every == 0:
             loss_value, images, labels, preds, _ = sess.run([loss, image_batch, label_batch, pred, optim],feed_dict={learning_rate:cur_lr})
             fig, axes = plt.subplots(args.save_num_images, 3, figsize = (16, 12))
-            for i in xrange(args.save_num_images):
+            for i in range(args.save_num_images):
                 axes.flat[i * 3].set_title('data')
                 axes.flat[i * 3].imshow((images[i] + IMG_MEAN)[:, :, ::-1].astype(np.uint8))
 
