@@ -113,6 +113,7 @@ def main():
         print("np.array(pred_result) shape: {}".format(tt.shape))
         label = np.array(label)
         print("label shape: {}".format(label.shape))
+        label.reshape(1,1,label.shape[2],label.shape[3],1)#convert to shape that decode_labels can recognise
 
         img_name = os.path.basename(image_path)
         img_name = img_name.replace("jpg", "png")
