@@ -117,7 +117,7 @@ def main():
         axes.flat[0].imshow(image.astype(np.uint8))
 
         axes.flat[1].set_title('mask')
-        axes.flat[1].imshow(decode_labels(np.array(label)))
+        axes.flat[1].imshow(decode_labels(np.array(label)[0,0, :, :, 0]))
 
         axes.flat[2].set_title('pred')
         axes.flat[2].imshow(decode_labels(np.array(pred_result)[0,0, :, :, 0]))
