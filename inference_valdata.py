@@ -91,7 +91,7 @@ def main():
 
     f = open(args.txt_path,"r")
     test_img_list = f.readlines()
-
+    test_img_list = [x.strip() for x in test_img_list]
     if not os.path.exists(args.save_dir):
         os.makedirs(args.save_dir)
 
