@@ -103,7 +103,7 @@ def main():
         image_path = os.path.join(args.img_path,tmp[0])
         label_path = os.path.join(args.img_path,tmp[1])
         image = cv2.imread(image_path)
-        label = cv2.imread(label_path)
+        label = cv2.imread(label_path,0)
 
         fig, axes = plt.subplots(1, 3, figsize=(15,5))
         pred_result = sess.run([pred], feed_dict={img_path:image_path})
@@ -113,7 +113,7 @@ def main():
         print("np.array(pred_result) shape: {}".format(tt.shape))
         label = np.array(label)
         print("label shape: {}".format(label.shape))
-        label.reshape(1,1,label.shape[2],label.shape[3],1)#convert to shape that decode_labels can recognise
+        label.reshape(1,1,label.shape[0],label.shape[1],1)#convert to shape that decode_labels can recognise
 
         img_name = os.path.basename(image_path)
         img_name = img_name.replace("jpg", "png")
