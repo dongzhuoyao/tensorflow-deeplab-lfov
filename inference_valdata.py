@@ -106,7 +106,7 @@ def main():
         image = cv2.imread(image_path)
         label = cv2.imread(label_path,0)
 
-        fig, axes = plt.subplots(1, 3, figsize=(15,10))
+        fig, axes = plt.subplots(2, 3, figsize=(15,10))
         fig.patch.set_visible(False)#http://stackoverflow.com/questions/14908576/how-to-remove-frame-from-matplotlib-pyplot-figure-vs-matplotlib-figure-frame
 
 
