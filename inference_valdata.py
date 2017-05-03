@@ -111,13 +111,6 @@ def main():
 
         tt =np.array(pred_result)
         print("np.array(pred_result) shape: {}".format(tt.shape))
-        label = np.array(label)
-        print("label shape: {}".format(label.shape))
-        label = np.expand_dims(label, axis=0)
-        label = np.expand_dims(label, axis=3)
-        label = np.expand_dims(label, axis=4)
-        #convert to shape that decode_labels can recognise
-        print("new label shape: {}".format(label.shape))
 
         img_name = os.path.basename(image_path)
         img_name = img_name.replace("jpg", "png")
@@ -126,7 +119,7 @@ def main():
         axes.flat[0].imshow(image.astype(np.uint8))
 
         axes.flat[1].set_title('mask')
-        axes.flat[1].imshow(decode_labels(np.array(label)[0,0, :, :, 0]))
+        axes.flat[1].imshow(decode_labels(label))
 
         axes.flat[2].set_title('pred')
         axes.flat[2].imshow(decode_labels(np.array(pred_result)[0,0, :, :, 0]))
