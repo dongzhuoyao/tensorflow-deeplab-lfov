@@ -107,8 +107,9 @@ def main():
         label = cv2.imread(label_path,0)
 
         fig, axes = plt.subplots(1, 3, figsize=(15,5))
-        axes.set_frame_on(False)
-        
+        fig.patch.set_visible(False)#http://stackoverflow.com/questions/14908576/how-to-remove-frame-from-matplotlib-pyplot-figure-vs-matplotlib-figure-frame
+        axes.axis('off')
+
 
         pred_result = sess.run([pred], feed_dict={img_path:image_path})
         #pre_result is a list!!!
