@@ -28,7 +28,7 @@ def decode_labels(mask,real=False):
         for k_, k in enumerate(j):
             if k < 21:
                 if real:
-                    pixels[k_, j_] = k
+                    pixels[k_, j_] = (k,k,k)
                 else:
                     pixels[k_,j_] = label_colours[k]
     return np.array(img)
