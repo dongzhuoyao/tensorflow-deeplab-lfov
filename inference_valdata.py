@@ -131,7 +131,7 @@ def main():
 
         axes.flat[1].axis('off')
         axes.flat[1].set_title('mask')
-        axes.flat[1].imshow(decode_labels(label,show_confusion=True))
+        axes.flat[1].imshow(decode_labels(label))
 
         axes.flat[2].axis('off')
         axes.flat[2].set_title('pred')
@@ -141,9 +141,9 @@ def main():
         axes.flat[3].set_title('wrong')
         axes.flat[3].imshow(wrong.astype(np.uint8),cmap='gray')
 
-        #axes.flat[4].axis('off')
-        #axes.flat[4].set_title('origin_label')
-        #axes.flat[4].imshow(label,cmap='gray')
+        axes.flat[4].axis('off')
+        axes.flat[4].set_title('origin_label')
+        axes.flat[4].imshow(decode_labels(label,show_confusion=True))
 
 
         print('The output file has been saved to {}'.format(os.path.join(args.save_dir,img_name)))
