@@ -115,14 +115,14 @@ def main():
 
         #im.save(os.path.join(args.save_dir,img_name))
 
-        axes.flat[i * 3].set_title('data')
-        axes.flat[i * 3].imshow(image.astype(np.uint8))
+        axes.flat[0].set_title('data')
+        axes.flat[0].imshow(image.astype(np.uint8))
 
-        axes.flat[i * 3 + 1].set_title('mask')
-        axes.flat[i * 3 + 1].imshow(label)
+        axes.flat[1].set_title('mask')
+        axes.flat[1].imshow(label)
 
-        axes.flat[i * 3 + 2].set_title('pred')
-        axes.flat[i * 3 + 2].imshow(decode_labels(np.array(pred_result)[0, :, :, 0]))
+        axes.flat[2].set_title('pred')
+        axes.flat[2].imshow(decode_labels(np.array(pred_result)[0, :, :, 0]))
         print('The output file has been saved to {}'.format(os.path.join(args.save_dir,img_name)))
         plt.savefig(os.path.join(args.save_dir,img_name))
         plt.close(fig)
