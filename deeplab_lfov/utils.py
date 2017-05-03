@@ -13,7 +13,7 @@ label_colours = [(0,0,0)
                 ,(0,64,0),(128,64,0),(0,192,0),(128,192,0),(0,64,128)]
                 # 16=potted plant, 17=sheep, 18=sofa, 19=train, 20=tv/monitor
     
-def decode_labels(mask):
+def decode_labels(mask,real=False):
     """Decode batch of segmentation masks.
     
     Args:
@@ -27,7 +27,10 @@ def decode_labels(mask):
     for j_, j in enumerate(mask):
         for k_, k in enumerate(j):
             if k < 21:
-                pixels[k_,j_] = label_colours[k]
+                if real:
+                    pixels[k_, j_] = k
+                else:
+                    pixels[k_,j_] = label_colours[k]
     return np.array(img)
 
 

@@ -87,7 +87,7 @@ def main():
 
         preds = sess.run([pred],feed_dict={img_path:current_img_path})
 
-        msk = decode_labels(np.array(preds)[0, 0, :, :, 0])
+        msk = decode_labels(np.array(preds)[0, 0, :, :, 0],real=True)
         im = Image.fromarray(msk)
         if not os.path.exists(args.save_dir):
             os.makedirs(args.save_dir)
