@@ -107,7 +107,8 @@ def main():
         label = cv2.imread(label_path,0)
 
         fig, axes = plt.subplots(1, 3, figsize=(15,5))
-        plt.legend(frameon=False)
+        axes.set_frame_on(False)
+        
 
         pred_result = sess.run([pred], feed_dict={img_path:image_path})
         #pre_result is a list!!!
