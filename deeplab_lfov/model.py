@@ -181,9 +181,13 @@ class DeepLabLFOVModel(object):
         """
         raw_output = self._create_network(tf.cast(input_batch, tf.float32), keep_prob=tf.constant(1.0))
         raw_output = tf.image.resize_bilinear(raw_output, tf.shape(input_batch)[1:3,])
+
+        confidence = tf.reduce_max(raw_output, dimension=3)
+        confidence = tf.expand_dims(confidence, dim=3)
+
         raw_output = tf.argmax(raw_output, dimension=3)
         raw_output = tf.expand_dims(raw_output, dim=3) # Create 4D-tensor.
-        return tf.cast(raw_output, tf.uint8)
+        return tf.cast(raw_output, tf.uint8),confidence
         
     
     def loss(self, img_batch, label_batch,weight_decay = 0.05):
