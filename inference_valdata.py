@@ -100,8 +100,8 @@ def main():
         tmp = line.split(" ")
         image_path = os.path.join(args.img_path,tmp[0])
         label_path = os.path.join(args.img_path,tmp[1])
-        image = cv2.imread(image_path)
-        label = cv2.imread(label_path)
+        image = cv2.imread(os.path.join(args.save_dir,image_path))
+        label = cv2.imread(os.path.join(args.save_dir,label_path))
 
         test_img_list = [os.path.join(args.img_path, tmp.split(" ")[0][1:]) for tmp in test_img_list]
 
