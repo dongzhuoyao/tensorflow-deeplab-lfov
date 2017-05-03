@@ -153,7 +153,7 @@ def main():
 
     with tf.name_scope("image_summary"):
         summary_list.append(tf.summary.image('total_image',
-                                             tf.concat([images_summary, labels_summary, predict_summary], 3),
+                                             tf.concat([images_summary, labels_summary, predict_summary], 2),
                                              max_outputs=SAVE_NUM_IMAGES))
 
 
