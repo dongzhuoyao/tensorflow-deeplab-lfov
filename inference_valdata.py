@@ -59,9 +59,9 @@ def main():
     """Create the model and start the evaluation process."""
     args = get_arguments()
 
-    image_path = tf.placeholder(tf.string)
+    img_path = tf.placeholder(tf.string)
     # Prepare image.
-    img = tf.image.decode_jpeg(tf.read_file(image_path), channels=3)
+    img = tf.image.decode_jpeg(tf.read_file(img_path), channels=3)
     # Convert RGB to BGR.
     img_r, img_g, img_b = tf.split(value=img, num_or_size_splits=3, axis=2 )
     img = tf.cast(tf.concat([img_b, img_g, img_r],2), dtype=tf.float32)
@@ -106,7 +106,7 @@ def main():
         test_img_list = [os.path.join(args.img_path, tmp.split(" ")[0][1:]) for tmp in test_img_list]
 
         fig, axes = plt.subplots(1, 3, figsize=(5, 15))
-        preds = sess.run([pred],feed_dict={image_path:image_path})
+        preds = sess.run([pred],feed_dict={img_path:image_path})
 
         msk = decode_labels(np.array(preds)[0, 0, :, :, 0])
         im = Image.fromarray(msk)
