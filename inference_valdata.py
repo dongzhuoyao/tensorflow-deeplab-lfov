@@ -114,6 +114,7 @@ def main():
         label = np.array(label)
         print("label shape: {}".format(label.shape))
         label.reshape(1,1,label.shape[0],label.shape[1],1)#convert to shape that decode_labels can recognise
+        print("new label shape: {}".format(label.shape))
 
         img_name = os.path.basename(image_path)
         img_name = img_name.replace("jpg", "png")
