@@ -95,7 +95,8 @@ def main():
     if not os.path.exists(args.save_dir):
         os.makedirs(args.save_dir)
 
-
+    plt.legend(frameon=False)
+    
     for i,line in enumerate(test_img_list):
         tmp = line.split(" ")
         tmp[0] = tmp[0][1:]#delete first /
@@ -106,6 +107,8 @@ def main():
         label = cv2.imread(label_path,0)
 
         fig, axes = plt.subplots(1, 3, figsize=(15,5))
+
+
         pred_result = sess.run([pred], feed_dict={img_path:image_path})
         #pre_result is a list!!!
 
