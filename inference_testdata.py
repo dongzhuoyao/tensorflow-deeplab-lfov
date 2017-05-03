@@ -82,7 +82,7 @@ def main():
     saver = tf.train.Saver(var_list=trainable)
     load(saver, sess, args.model_weights)
 
-    test_img_list = glob.glob(os.path.join(args.test_img_dir, "*.jpg"))
+    test_img_list = glob.glob(os.path.join(args.img_path, "*.jpg"))
     for current_img_path in test_img_list:
 
         preds = sess.run([pred],feed_dict={img_path:current_img_path})
