@@ -105,7 +105,7 @@ def main():
         image = cv2.imread(image_path)
         label = cv2.imread(label_path)
 
-        fig, axes = plt.subplots(1, 3, figsize=(5, 15))
+        fig, axes = plt.subplots(1, 3, figsize=(15,5))
         pred_result = sess.run([pred], feed_dict={img_path:image_path})
 
         msk = decode_labels(np.array(pred_result)[0, 0, :, :, 0])
