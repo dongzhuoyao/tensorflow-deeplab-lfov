@@ -109,6 +109,10 @@ def main():
         pred_result = sess.run([pred], feed_dict={img_path:image_path})
         #pre_result is a list!!!
 
+        tt =np.array(pred_result)
+        print("np.array(pred_result) shape: {}".format(tt.shape))
+        label = np.array(label)
+        print("label shape: {}".format(label.shape))
 
         img_name = os.path.basename(image_path)
         img_name = img_name.replace("jpg", "png")
