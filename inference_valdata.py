@@ -123,18 +123,19 @@ def main():
         img_name = os.path.basename(image_path)
         img_name = img_name.replace("jpg", "png")
 
-
+        axes.flat[0].axis('off')
         axes.flat[0].set_title('data')
         axes.flat[0].imshow(image.astype(np.uint8))
 
-
+        axes.flat[1].axis('off')
         axes.flat[1].set_title('mask')
         axes.flat[1].imshow(decode_labels(label))
 
-
+        axes.flat[2].axis('off')
         axes.flat[2].set_title('pred')
         axes.flat[2].imshow(decode_labels(pred_result))
 
+        axes.flat[3].axis('off')
         axes.flat[3].set_title('wrong')
         axes.flat[3].imshow(wrong.astype(np.uint8))
 
