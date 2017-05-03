@@ -108,6 +108,7 @@ def main():
         fig, axes = plt.subplots(1, 3, figsize=(15,5))
         pred_result = sess.run([pred], feed_dict={img_path:image_path})
 
+        print("predict shape: {}".format(pred_result.shape))
         msk = decode_labels(np.array(pred_result)[0, 0, :, :, 0])
 
         img_name = os.path.basename(image_path)
@@ -122,7 +123,7 @@ def main():
         axes.flat[1].imshow(label)
 
         axes.flat[2].set_title('pred')
-        axes.flat[2].imshow(decode_labels(np.array(pred_result)[0, :, :, 0]))
+        axes.flat[2].imshow(decode_labels(np.array(pred_result)[0,0, :, :, 0]))
         print('The output file has been saved to {}'.format(os.path.join(args.save_dir,img_name)))
         plt.savefig(os.path.join(args.save_dir,img_name))
         plt.close(fig)
