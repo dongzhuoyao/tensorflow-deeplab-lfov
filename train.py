@@ -24,6 +24,7 @@ import tensorflow as tf
 import numpy as np
 import math
 from deeplab_lfov import DeepLabLFOVModel, ImageReader, decode_labels
+from deeplab_lfov.utils_from_resnet import decode_labels_by_batch,inv_preprocess,single_channel_process,attention_map_process
 
 BATCH_SIZE = 10
 DATA_DIRECTORY = '/home/VOCdevkit'
@@ -37,6 +38,7 @@ RESTORE_FROM = './deeplab_lfov.ckpt'
 SAVE_DIR = './images/'
 SAVE_NUM_IMAGES = 2
 SAVE_PRED_EVERY = 100
+SUMMARY_FREQ = 50
 SNAPSHOT_DIR = './snapshots/'
 WEIGHTS_PATH   = None
 
@@ -74,6 +76,12 @@ def get_arguments():
     parser.add_argument("--weights_path", type=str, default=WEIGHTS_PATH,
                         help="Path to the file with caffemodel weights. "
                              "If not set, all the variables are initialised randomly.")
+
+    parser.add_argument("--summary_freq", type=int, default=SUMMARY_FREQ,
+                        help="summary_freq"
+                             "summary_freq")
+    parser.add_argument("--summay_dir", type=str, default="./summary",
+                        help="logs")
     return parser.parse_args()
 
 def save(saver, sess, logdir, step):
@@ -121,13 +129,38 @@ def main():
     net = DeepLabLFOVModel(args.weights_path)
 
     # Define the loss and optimisation parameters.
-    loss = net.loss(image_batch, label_batch,weight_decay=0.05)
+    loss,predict_imgs = net.loss(image_batch, label_batch,weight_decay=0.005)
     learning_rate = tf.placeholder(tf.float32, shape=[])
     optimiser = tf.train.MomentumOptimizer(learning_rate=learning_rate,momentum=0.9)
     trainable = tf.trainable_variables()
     optim = optimiser.minimize(loss, var_list=trainable)
     
     pred,_ = net.preds(image_batch)
+
+    images_summary = tf.py_func(inv_preprocess, [image_batch, SAVE_NUM_IMAGES], tf.uint8)
+    labels_summary = tf.py_func(decode_labels_by_batch, [label_batch, SAVE_NUM_IMAGES], tf.uint8)
+    predict_summary = tf.py_func(decode_labels_by_batch, [predict_imgs, SAVE_NUM_IMAGES], tf.uint8)
+
+
+    # define Summary
+    summary_list = []
+    for var in tf.trainable_variables():
+        summary_list.append(tf.summary.histogram(var.op.name + "/values", var))
+
+    # summary
+    with tf.name_scope("loss_summary"):
+        summary_list.append(tf.summary.scalar("main_loss", loss))
+
+    with tf.name_scope("image_summary"):
+        summary_list.append(tf.summary.image('total_image',
+                                             tf.concat([images_summary, labels_summary, predict_summary], 4),
+                                             max_outputs=SAVE_NUM_IMAGES))
+
+
+    merged_summary_op = tf.summary.merge(summary_list)
+
+
+
     
     # Set up tf session and initialize variables. 
     config = tf.ConfigProto()
@@ -136,7 +169,9 @@ def main():
     init = tf.global_variables_initializer()
     
     sess.run(init)
-    
+    summary_writer = tf.summary.FileWriter(args.summay_dir, sess.graph)
+
+
     # Saver for storing checkpoints of the model.
     saver = tf.train.Saver(var_list=trainable, max_to_keep=40)
     if args.restore_from is not None:
@@ -156,6 +191,11 @@ def main():
         cur_lr = args.learning_rate/math.pow(10,lr_scale)
         print ("current learning rate: {}".format(cur_lr))
 
+        if step % args.summary_freq == 0:
+            print("write summay...")
+            # generate summary for tensorboard
+            summary_str = sess.run(merged_summary_op)
+            summary_writer.add_summary(summary_str, step)
 
         if step % args.save_pred_every == 0:
             loss_value, images, labels, preds, _ = sess.run([loss, image_batch, label_batch, pred, optim],feed_dict={learning_rate:cur_lr})

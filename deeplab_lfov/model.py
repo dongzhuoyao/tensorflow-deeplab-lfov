@@ -201,6 +201,10 @@ class DeepLabLFOVModel(object):
           Pixel-wise softmax loss.
         """
         raw_output = self._create_network(tf.cast(img_batch, tf.float32), keep_prob=tf.constant(0.5))
+        predictions = tf.image.resize_bilinear(raw_output, tf.shape(img_batch)[1:3, ])
+        predictions = tf.argmax(predictions, dimension=3)
+        predictions = tf.expand_dims(predictions, dim=3)  # Create 4D-tensor.
+
         prediction = tf.reshape(raw_output, [-1, n_classes])
         
         # Need to resize labels and convert using one-hot encoding.
@@ -214,4 +218,4 @@ class DeepLabLFOVModel(object):
         reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
         loss = reduced_loss + weight_decay * sum(reg_losses)
 
-        return reduced_loss
+        return loss,predictions
