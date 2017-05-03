@@ -10,6 +10,7 @@ from datetime import datetime
 import os
 import sys
 import time
+import glob
 
 from PIL import Image
 
@@ -50,9 +51,10 @@ def load(saver, sess, ckpt_path):
 def main():
     """Create the model and start the evaluation process."""
     args = get_arguments()
-    
+
+    img_path = tf.placeholder(tf.string)
     # Prepare image.
-    img = tf.image.decode_jpeg(tf.read_file(args.img_path), channels=3)
+    img = tf.image.decode_jpeg(tf.read_file(img_path), channels=3)
     # Convert RGB to BGR.
     img_r, img_g, img_b = tf.split(value=img, num_or_size_splits=3, axis=2 )
     img = tf.cast(tf.concat([img_b, img_g, img_r],2), dtype=tf.float32)
@@ -79,17 +81,22 @@ def main():
     # Load weights.
     saver = tf.train.Saver(var_list=trainable)
     load(saver, sess, args.model_weights)
-    
-    # Perform inference.
-    preds = sess.run([pred])
-    
-    msk = decode_labels(np.array(preds)[0, 0, :, :, 0])
-    im = Image.fromarray(msk)
-    if not os.path.exists(args.save_dir):
-        os.makedirs(args.save_dir)
-    im.save(args.save_dir + 'mask.png')
-    
-    print('The output file has been saved to {}'.format(args.save_dir + 'mask.png'))
+
+    test_img_list = glob.glob(os.path.join(args.test_img_dir, "*.jpg"))
+    for current_img_path in test_img_list:
+
+        preds = sess.run([pred],feed_dict={img_path:current_img_path})
+
+        msk = decode_labels(np.array(preds)[0, 0, :, :, 0])
+        im = Image.fromarray(msk)
+        if not os.path.exists(args.save_dir):
+            os.makedirs(args.save_dir)
+
+        img_name = os.path.basename(current_img_path)
+        img_name = img_name.replace("jpg", "png")
+        im.save(os.path.join(args.save_dir,img_name))
+
+        print('The output file has been saved to {}'.format(os.path.join(args.save_dir,img_name)))
 
     
 if __name__ == '__main__':
