@@ -116,7 +116,7 @@ def main():
         pred_result = np.array(pred_result)[0,0, :, :, 0]
         print("np.array(pred_result) shape: {}".format(pred_result.shape))
 
-        wrong = np.not_equal(pred_result,label)*255
+        wrong = np.not_equal(pred_result.astype(np.uint8),label.astype(np.uint8))*255
 
 
 
