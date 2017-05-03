@@ -24,7 +24,7 @@ import tensorflow as tf
 import numpy as np
 import math
 from deeplab_lfov import DeepLabLFOVModel, ImageReader, decode_labels
-from deeplab_lfov.utils_from_resnet import decode_labels_by_batch,inv_preprocess,single_channel_process,attention_map_process
+from deeplab_lfov.utils_from_resnet import decode_labels_by_batch,inv_preprocess
 
 BATCH_SIZE = 10
 DATA_DIRECTORY = '/home/VOCdevkit'
@@ -153,7 +153,7 @@ def main():
 
     with tf.name_scope("image_summary"):
         summary_list.append(tf.summary.image('total_image',
-                                             tf.concat([images_summary, labels_summary, predict_summary], 4),
+                                             tf.concat([images_summary, labels_summary, predict_summary], 3),
                                              max_outputs=SAVE_NUM_IMAGES))
 
 
