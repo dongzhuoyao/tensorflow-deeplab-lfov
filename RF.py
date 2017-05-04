@@ -131,13 +131,9 @@ def main():
             deeplab.fc8_w,deeplab.confidence_cubic], feed_dict={image:tmp_img})
 
 
-            max_class = np.argmax(confidence_cubic[0,h,w,:],axis=0)
-            #print("max class: {}".format(max_class))  # class 15:person
-            if max_class != origin_max_class:
-                print("class mismatch.....")
-                exit()
-            print("max probobility: {}".format(confidence_cubic[0,h,w,max_class]))
-            candidate_list.append((i,j,math.fabs(origin_confidence-confidence_cubic[0,h,w,max_class])))
+            print("max probobility: {}".format(confidence_cubic[0,h,w,origin_max_class]))
+            candidate_list.append((i,j,math.fabs(origin_confidence-confidence_cubic[0,h,w,origin_max_class])))
+
 
     candidate_list.sort(key=lambda x: x[2], reverse=True)
 
