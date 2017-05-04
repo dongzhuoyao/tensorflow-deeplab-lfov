@@ -117,11 +117,11 @@ def main():
     print("origin max class: {}".format(origin_max_class))  # class 15:person
     print("origin max probobility: {}".format(origin_confidence))
 
+
+    noise_np = np.random.rand(11,11,3)*255
+    candidate_list = []
     window_size = 11
     step = 5
-
-    noise_np = np.random.rand(window_size,window_size,3)*255
-    candidate_list = []
     for i in range(0,img_w-window_size,step):
         for j in range(0,img_h-window_size,step):
             tmp_img = np.copy(cur_image)
@@ -141,7 +141,7 @@ def main():
     result = np.zeros_like(cur_image,dtype=np.float64)
     for m in range(100):
         i,j,activation = candidate_list[m]
-        result[i:i+window_size,j+window_size,:] += activation
+        result[i:i+window_size,j+window_size,:] = activation
 
     result *= 255.0 / result.max()
 
