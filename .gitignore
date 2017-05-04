@@ -1,2 +1,5 @@
 .idea/
 model*
+*.pyc
+*.jpg
+*.png

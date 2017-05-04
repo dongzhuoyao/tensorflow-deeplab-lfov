@@ -144,10 +144,11 @@ class DeepLabLFOVModel(object):
                                          padding='SAME')
             elif b_idx <= 6:
                 current = tf.nn.dropout(current, keep_prob=keep_prob)
-        
+
+        self.fm8 = current
         # Classification layer; no ReLU.
-        w = self.variables[v_idx * 2]
-        b = self.variables[v_idx * 2 + 1]
+        w = self.fc8_w = self.variables[v_idx * 2]
+        b = self.fc8_b = self.variables[v_idx * 2 + 1]
         conv = tf.nn.conv2d(current, w, strides=[1, 1, 1, 1], padding='SAME')
         current = tf.nn.bias_add(conv, b)
 
@@ -182,8 +183,10 @@ class DeepLabLFOVModel(object):
         raw_output = self._create_network(tf.cast(input_batch, tf.float32), keep_prob=tf.constant(1.0))
         raw_output = tf.image.resize_bilinear(raw_output, tf.shape(input_batch)[1:3,])
 
-        confidence = tf.nn.softmax(raw_output)
+        confidence = self.confidence_cubic =  tf.nn.softmax(raw_output)
         confidence = tf.reduce_max(confidence,  keep_dims=True, axis=3)
+
+
 
 
         raw_output = tf.argmax(raw_output, dimension=3)
