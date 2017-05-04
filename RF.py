@@ -121,8 +121,8 @@ def main():
     noise_np = np.random.rand(11,11,3)*255
     candidate_list = []
     window_size = 11
-    for i in range(0,img_w-6,3):
-        for j in range(0,img_h-6,3):
+    for i in range(0,img_w-window_size,3):
+        for j in range(0,img_h-window_size,3):
             tmp_img = np.copy(cur_image)
             tmp_img[i:i+window_size,j:j+window_size,:] = noise_np
             #cv2.imwrite("rrr.jpg",tmp_img)
