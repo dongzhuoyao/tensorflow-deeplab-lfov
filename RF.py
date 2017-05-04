@@ -139,9 +139,10 @@ def main():
     candidate_list.sort(key=lambda x: x[2], reverse=True)
 
     result = np.zeros_like(cur_image,dtype=np.float64)
-    for m in range(100):
+    for m in range(1000):
         i,j,activation = candidate_list[m]
-        result[i:i+window_size,j+window_size,:] += activation
+        tmp = activation*np.ones_like(result[i:i+window_size,j:j+window_size,:])
+        result[i:i+window_size,j:j+window_size,:] += tmp
 
     result *= 255.0 / result.max()
 
