@@ -121,7 +121,7 @@ def main():
     noise_np = np.random.rand(11,11,3)*255
     candidate_list = []
     window_size = 11
-    step = 100
+    step = 5
     for i in range(0,img_w-window_size,step):
         for j in range(0,img_h-window_size,step):
             tmp_img = np.copy(cur_image)
@@ -139,13 +139,13 @@ def main():
     candidate_list.sort(key=lambda x: x[2], reverse=True)
 
     result = np.zeros_like(cur_image,dtype=np.float64)
-    for m in range(3):
+    for m in range(100):
         i,j,activation = candidate_list[m]
         result[i:i+window_size,j+window_size,:] = activation
 
     result *= 255.0 / result.max()
 
-    cv2.imwrite(result,"rf_result.jpg")
+    cv2.imwrite("rf_result.jpg",result)
 
 
 
