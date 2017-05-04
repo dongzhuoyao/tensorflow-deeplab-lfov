@@ -62,7 +62,8 @@ def main():
 
     img_path = tf.placeholder(tf.string)
     # Prepare image.
-    img = tf.image.decode_jpeg(tf.read_file(img_path), channels=3)
+    #img = tf.image.decode_jpeg(tf.read_file(img_path), channels=3)
+    img = tf.image.decode_png(tf.read_file(img_path), channels=3)
     # Convert RGB to BGR.
     img_r, img_g, img_b = tf.split(value=img, num_or_size_splits=3, axis=2 )
     img = tf.cast(tf.concat([img_b, img_g, img_r],2), dtype=tf.float32)
