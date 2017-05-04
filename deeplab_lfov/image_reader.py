@@ -48,7 +48,7 @@ def read_images_from_disk(input_queue, input_size, random_scale,img_type,mask_ty
     else:
         decode_image = tf.image.decode_png
 
-    if img_type==".jpg":
+    if mask_type==".jpg":
         decode_label = tf.image.decode_jpeg
     else:
         decode_label = tf.image.decode_png
