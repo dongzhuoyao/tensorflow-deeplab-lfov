@@ -43,7 +43,6 @@ from skimage.io import imsave
 SAVE_DIR = './rf/'
 IMG_MEAN = np.array((104.00698793,116.66876762,122.67891434), dtype=np.float32)
 
-cur_img_path = "./test/2007_008747.jpg"
 
 """
 img = img_as_float(astronaut()[::2, ::2])
@@ -147,6 +146,8 @@ def main():
     if not os.path.exists(args.save_dir):
         os.makedirs(args.save_dir)
 
+    threshold = 0.2
+
     cur_image =cv2.imread("./test/2007_008747.jpg")
     w = 226;h = 394  # xiaofangshuan
 
@@ -196,7 +197,7 @@ def main():
             print("cur max probobility: {}".format(cur_confidence))
             reduced_confidence_list.append((math.fabs(cur_confidence-origin_confidence),tmp_mask,seg_id,cur_max_class))
 
-        reduced_confidence_list = [x for x in reduced_confidence_list if x[3]==origin_max_class]
+        reduced_confidence_list = [x for x in reduced_confidence_list if x[3]==origin_max_class and x[0] < threshold]
 
         # halt criterion
         if  len(reduced_confidence_list)==0:
