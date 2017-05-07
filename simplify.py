@@ -146,7 +146,7 @@ def main():
     if not os.path.exists(args.save_dir):
         os.makedirs(args.save_dir)
 
-    threshold = 0.05
+    threshold = 0.025
 
     cur_image =cv2.imread("./test/2007_008747.jpg")
     w = 226;h = 394  # xiaofangshuan
