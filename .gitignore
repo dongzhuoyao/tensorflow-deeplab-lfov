@@ -3,3 +3,4 @@ model*
 *.pyc
 *.jpg
 *.png
+.DS*

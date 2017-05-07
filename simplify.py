@@ -22,16 +22,62 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import math
 
-
 from deeplab_lfov import DeepLabLFOVModel, ImageReader, decode_labels
 from deeplab_lfov.utils import single_channel_process
+
+
+
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+from skimage.data import astronaut
+from skimage.color import rgb2gray
+from skimage.filters import sobel
+from skimage.segmentation import felzenszwalb, slic, quickshift
+from skimage.segmentation import mark_boundaries
+from skimage.util import img_as_float
+from skimage.io import imsave
+
 
 SAVE_DIR = './rf/'
 IMG_MEAN = np.array((104.00698793,116.66876762,122.67891434), dtype=np.float32)
 
-#cur_img_path = "./test/2008_000270.jpg"
-#cur_img_path = "./test/2008_000234.jpg"
 cur_img_path = "./test/2007_008747.jpg"
+
+"""
+img = img_as_float(astronaut()[::2, ::2])
+
+segments_fz = felzenszwalb(img, scale=100, sigma=0.5, min_size=50)
+segments_slic = slic(img, n_segments=200, compactness=10, sigma=1)
+segments_quick = quickshift(img, kernel_size=3, max_dist=6, ratio=0.5)
+gradient = sobel(rgb2gray(img))
+
+print("Felzenszwalb number of segments: {}".format(len(np.unique(segments_fz))))
+print('SLIC number of segments: {}'.format(len(np.unique(segments_slic))))
+print('Quickshift number of segments: {}'.format(len(np.unique(segments_quick))))
+
+fig, ax = plt.subplots(2, 2, figsize=(10, 10), sharex=True, sharey=True,
+                       subplot_kw={'adjustable': 'box-forced'})
+
+ax[0, 0].imshow(mark_boundaries(img, segments_fz))
+ax[0, 0].set_title("Felzenszwalbs's method")
+ax[0, 1].imshow(mark_boundaries(img, segments_slic))
+ax[0, 1].set_title('SLIC')
+ax[1, 0].imshow(mark_boundaries(img, segments_quick))
+ax[1, 0].set_title('Quickshift')
+
+
+for a in ax.ravel():
+    a.set_axis_off()
+
+plt.tight_layout()
+plt.show()
+plt.savefig("slic.png")
+plt.close()
+"""
+
+
 def get_arguments():
     """Parse all the arguments provided from the CLI.
     
@@ -102,11 +148,10 @@ def main():
         os.makedirs(args.save_dir)
 
     cur_image =cv2.imread("./test/2007_008747.jpg")
-    img_w,img_h,img_c = cur_image.shape
-
-    fig, axes = plt.subplots(2, 3, figsize=(15,10))
     w = 226;h = 394  # xiaofangshuan
-    #fig.patch.set_visible(False)#http://stackoverflow.com/questions/14908576/how-to-remove-frame-from-matplotlib-pyplot-figure-vs-matplotlib-figure-frame
+
+    cur_image = cv2.imread("./test/2008_000270.jpg")
+    w=212;h=100#mother head
 
     pred_result, _img, fm8, fc8_w, confidence_cubic = sess.run([pred, origin_img, deeplab.fm8, \
                                                                 deeplab.fc8_w, deeplab.confidence_cubic],
@@ -114,58 +159,65 @@ def main():
 
     origin_max_class = np.argmax(confidence_cubic[0, h, w, :], axis=0)
     origin_confidence = confidence_cubic[0, h, w, origin_max_class]
-    print("origin max class: {}".format(origin_max_class))  # class 15:person
+    print("origin max class: {}".format(origin_max_class))  # class 5
     print("origin max probobility: {}".format(origin_confidence))
 
 
-    noise_np = np.random.rand(11,11,3)*255
+    segments_slic = slic(cur_image, n_segments=100, compactness=10, sigma=1)
+    slic_result = mark_boundaries(cur_image, segments_slic)
+    imsave("slic_result.jpg", slic_result)
+    max_mask = np.amax(segments_slic)
+
     candidate_list = []
-    window_size = 11
-    step = 5
-    for i in range(0,img_w-window_size,step):
-        for j in range(0,img_h-window_size,step):
-            tmp_img = np.copy(cur_image)
-            tmp_img[i:i+window_size,j:j+window_size,:] = noise_np
-            #cv2.imwrite("rrr.jpg",tmp_img)
+    for i in range(max_mask+1):
+        candidate_list.append(i)
+    mask = np.ones_like(cur_image)
 
-            pred_result,_img,fm8,fc8_w,confidence_cubic = sess.run([pred,origin_img,deeplab.fm8,\
-            deeplab.fc8_w,deeplab.confidence_cubic], feed_dict={image:tmp_img})
+    segments_slic = np.expand_dims(segments_slic,axis=2)
+    segments_slic = np.repeat(segments_slic,3,axis=2)
+    while len(candidate_list):
+        reduced_confidence_list = []
+        print("====new iteration====")
+        for i,seg_id in enumerate(candidate_list):
+            tmp = np.ones_like(segments_slic)*seg_id
+            tmp = -np.equal(tmp,segments_slic)
+            tmp_mask = np.multiply(mask,tmp)
+
+            tmp_img = np.multiply(tmp_mask,cur_image)
+
+            pred_result, _img, fm8, fc8_w, confidence_cubic = sess.run([pred, origin_img, deeplab.fm8, \
+                                                                deeplab.fc8_w, deeplab.confidence_cubic],
+                                                               feed_dict={image: tmp_img})
+
+            cur_max_class = np.argmax(confidence_cubic[0, h, w, :], axis=0)
+
+            cur_confidence = confidence_cubic[0, h, w, origin_max_class]
+            print("cur max class: {}".format(cur_max_class))
+            print("cur max probobility: {}".format(cur_confidence))
+            reduced_confidence_list.append((math.fabs(cur_confidence-origin_confidence),tmp_mask,seg_id,cur_max_class))
+
+        reduced_confidence_list = [x for x in reduced_confidence_list if x[3]==origin_max_class]
+
+        # halt criterion
+        if  len(reduced_confidence_list)==0:
+            print("halt condition meets.break~")
+            break
+
+        #sort by confidence
+        reduced_confidence_list.sort(key=lambda x: x[0])
+
+        #mask update
+        mask = np.multiply(mask,reduced_confidence_list[0][1])
+
+        #delete from candidate
+        candidate_list.remove(reduced_confidence_list[0][2])
+
+    final_image = np.multiply(mask,cur_image)
+    cv2.imwrite("simplify_result.jpg", final_image)
 
 
-            print("max probobility: {}".format(confidence_cubic[0,h,w,origin_max_class]))
-            candidate_list.append((i,j,math.fabs(origin_confidence-confidence_cubic[0,h,w,origin_max_class])))
 
 
-    candidate_list.sort(key=lambda x: x[2], reverse=True)
-
-    result = np.zeros_like(cur_image,dtype=np.float64)
-    for m in range(100):
-        i,j,activation = candidate_list[m]
-        result[i:i+window_size,j+window_size,:] = activation
-
-    result *= 255.0 / result.max()
-
-    cv2.imwrite("rf_result.jpg",result)
-
-
-
-
-
-
-    #axes.flat[0].set_title('mask')
-    #axes.flat[0].imshow(final_fm)
-
-    #axes.flat[1].set_title('src')
-    #axes.flat[1].imshow(_img)
-
-
-    #pre_result is a list!!!
-    #pred_result = np.array(pred_result)[0, :, :, 0]
-
-    #confidence_result = np.array(confidence_result)[0, :, :, 0]
-    print("np.array(pred_result) shape: {}".format(pred_result.shape))
-    plt.savefig("TAT.png")
-    plt.close(fig)
 
 
 
