@@ -38,7 +38,7 @@ RANDOM_SCALE = True
 RESTORE_FROM = './deeplab_lfov.ckpt'
 SAVE_DIR = './images/'
 SAVE_NUM_IMAGES = 2
-SAVE_PRED_EVERY = 100
+SAVE_PRED_EVERY = 10
 SNAPSHOT_DIR = './snapshots/'
 WEIGHTS_PATH   = None
 
@@ -259,7 +259,7 @@ def main():
 
             print("write summay...")
             # generate summary for tensorboard
-            summary_str = sess.run(merged_summary_op)
+            summary_str = sess.run(merged_summary_op,feed_dict={learning_rate: cur_lr,is_validation:True})
             summary_writer.add_summary(summary_str, step)
 
             val_loss_value, images, labels, preds, _ = sess.run([loss, image_batch, label_batch, pred, optim],
