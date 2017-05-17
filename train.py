@@ -24,19 +24,21 @@ import tensorflow as tf
 import numpy as np
 import math
 from deeplab_lfov import DeepLabLFOVModel, ImageReader, decode_labels
+from deeplab_lfov.utils_from_resnet import decode_labels_by_batch,inv_preprocess,single_channel_process,attention_map_process
+
 
 BATCH_SIZE = 16
 DATA_DIRECTORY = '/home/VOCdevkit'
 DATA_LIST_PATH = './dataset/train.txt'
 INPUT_SIZE = '321,321'
-LEARNING_RATE = 1e-4
+LEARNING_RATE = 1e-3
 MEAN_IMG = tf.Variable(np.array((104.00698793,116.66876762,122.67891434)), trainable=False, dtype=tf.float32)
-NUM_STEPS = 20000
+NUM_STEPS = 20000000
 RANDOM_SCALE = True
 RESTORE_FROM = './deeplab_lfov.ckpt'
 SAVE_DIR = './images/'
 SAVE_NUM_IMAGES = 2
-SAVE_PRED_EVERY = 500
+SAVE_PRED_EVERY = 100
 SNAPSHOT_DIR = './snapshots/'
 WEIGHTS_PATH   = None
 
@@ -106,7 +108,54 @@ def main():
     
     # Create queue coordinator.
     coord = tf.train.Coordinator()
-    
+
+    print("====global variable shape check====")
+    for v in tf.global_variables():
+        print("{}:  {}".format(v.name, v.get_shape()))
+
+    recoverable = []
+    for choosed in [u'conv1', u'conv2', u'conv3', u'conv4', u'conv5', u'fc6', u'fc7', u'fc8']:
+        for tmp in tf.global_variables():
+            if choosed in tmp.name:
+                recoverable.append(tmp)
+
+    print("====trainable shape check====")
+    for v in recoverable:
+        print("{}:  {}".format(v.name, v.get_shape()))
+
+    stage_var = []
+    for choosed in [u'stage']:
+        for tmp in tf.global_variables():
+            if choosed in tmp.name:
+                stage_var.append(tmp)
+
+    print("====trainable shape check====")
+    for v in stage_var:
+        print("{}:  {}".format(v.name, v.get_shape()))
+
+
+    # Load reader.
+    with tf.name_scope("create_inputs"):
+        reader = ImageReader(
+            args.data_dir,
+            './dataset/val.txt',
+            input_size,
+            RANDOM_SCALE,
+            coord)
+        val_image_batch, val_label_batch = reader.dequeue(args.batch_size)
+
+    # Create network.
+    net = DeepLabLFOVModel(args.weights_path)
+    # Define the loss and optimisation parameters.
+    val_loss = net.loss(val_image_batch, val_label_batch, weight_decay=0.05)
+    val_learning_rate = tf.placeholder(tf.float32, shape=[])
+
+
+    val_optim_1 = tf.train.MomentumOptimizer(learning_rate=val_learning_rate * 0.1, momentum=0.9).minimize(val_loss,                                                                                             var_list=recoverable)
+    val_optim_2 = tf.train.MomentumOptimizer(learning_rate=val_learning_rate, momentum=0.9).minimize(val_loss, var_list=stage_var)
+    val_optim = tf.group(val_optim_1, val_optim_2)
+
+
     # Load reader.
     with tf.name_scope("create_inputs"):
         reader = ImageReader(
@@ -116,18 +165,46 @@ def main():
             RANDOM_SCALE,
             coord)
         image_batch, label_batch = reader.dequeue(args.batch_size)
-    
+
     # Create network.
     net = DeepLabLFOVModel(args.weights_path)
-
     # Define the loss and optimisation parameters.
-    loss = net.loss(image_batch, label_batch,weight_decay=0.05)
+    loss = net.loss(image_batch, label_batch, weight_decay=0.05)
     learning_rate = tf.placeholder(tf.float32, shape=[])
-    optimiser = tf.train.MomentumOptimizer(learning_rate=learning_rate,momentum=0.9)
-    trainable = tf.trainable_variables()
-    optim = optimiser.minimize(loss, var_list=trainable)
-    
+
+    optim_1 = tf.train.MomentumOptimizer(learning_rate=learning_rate*0.1, momentum=0.9).minimize(loss, var_list=recoverable)
+    optim_2 = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9).minimize(loss, var_list=stage_var)
+    optim = tf.group(optim_1,optim_2)
+
+
     pred = net.preds(image_batch)
+
+    images_summary = tf.py_func(inv_preprocess, [image_batch, SAVE_NUM_IMAGES], tf.uint8)
+    labels_summary = tf.py_func(decode_labels_by_batch, [label_batch, SAVE_NUM_IMAGES], tf.uint8)
+    predict_summary = tf.py_func(decode_labels_by_batch, [pred, SAVE_NUM_IMAGES], tf.uint8)
+
+
+    # define Summary
+    summary_list = []
+    for var in tf.trainable_variables():
+        summary_list.append(tf.summary.histogram(var.op.name + "/values", var))
+
+    # summary
+    with tf.name_scope("loss_summary"):
+        summary_list.append(tf.summary.scalar("main_loss", loss))
+
+    with tf.name_scope("image_summary"):
+        # origin_summary = tf.summary.image("origin", images_summary)
+        # label_summary = tf.summary.image("label", labels_summary)
+        summary_list.append(tf.summary.image('total_image',
+                                             tf.concat([images_summary, labels_summary, predict_summary], 2),
+                                             max_outputs=SAVE_NUM_IMAGES))
+
+
+    merged_summary_op = tf.summary.merge(summary_list)
+
+
+
     
     # Set up tf session and initialize variables. 
     config = tf.ConfigProto()
@@ -136,11 +213,16 @@ def main():
     init = tf.global_variables_initializer()
     
     sess.run(init)
+    summary_writer = tf.summary.FileWriter(args.summay_dir, sess.graph)
+
+
     
     # Saver for storing checkpoints of the model.
-    saver = tf.train.Saver(var_list=trainable, max_to_keep=40)
+    readSaver = tf.train.Saver(var_list=recoverable, max_to_keep=40)
+    writeSaver = tf.train.Saver(max_to_keep=20)
+
     if args.restore_from is not None:
-        load(saver, sess, args.restore_from)
+        load(readSaver, sess, args.restore_from)
     
     # Start queue threads.
     threads = tf.train.start_queue_runners(coord=coord, sess=sess)
@@ -152,7 +234,7 @@ def main():
     for step in range(args.num_steps):
         start_time = time.time()
         #get learning rate
-        lr_scale = math.floor(step/2000);
+        lr_scale = math.floor(step/4000);
         cur_lr = args.learning_rate/math.pow(10,lr_scale)
         print ("current learning rate: {}".format(cur_lr))
 
@@ -171,10 +253,24 @@ def main():
                 axes.flat[i * 3 + 2].imshow(decode_labels(preds[i, :, :, 0]))
             plt.savefig(args.save_dir + str(start_time) + ".png")
             plt.close(fig)
-            save(saver, sess, args.snapshot_dir, step)
+            save(writeSaver, sess, args.snapshot_dir, step)
+
+            print("write summay...")
+            # generate summary for tensorboard
+            summary_str = sess.run(merged_summary_op)
+            summary_writer.add_summary(summary_str, step)
+
+            #do validation
+            _val_loss, images, labels, _ = sess.run([val_loss, val_image_batch, val_label_batch, val_optim],
+                                                            feed_dict={learning_rate: cur_lr})
+
+            print('step {:d} \t validation loss = {:.3f}, ({:.3f} sec/step)'.format(step, _val_loss, duration))
+
+
         else:
             loss_value, _ = sess.run([loss, optim],feed_dict={learning_rate:cur_lr})
         duration = time.time() - start_time
+
         print('step {:d} \t loss = {:.3f}, ({:.3f} sec/step)'.format(step, loss_value, duration))
     coord.request_stop()
     coord.join(threads)

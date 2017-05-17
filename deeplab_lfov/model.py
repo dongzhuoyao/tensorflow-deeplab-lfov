@@ -95,7 +95,48 @@ class DeepLabLFOVModel(object):
                     b = create_bias_variable(name, list(shape))
                     var.append(b)
         return var
-    
+
+    def stage_network(self,stage_name,current):
+
+        w_initialiser = tf.contrib.layers.xavier_initializer_conv2d(dtype=tf.float32)
+        b_initialiser = tf.constant_initializer(value=0.0, dtype=tf.float32)
+        #533 = 512+21
+        stage1_c1_w = tf.Variable(w_initialiser(shape=(7, 7, 533, 128)), name=stage_name+"_c1_w")
+        stage1_c1_b = tf.Variable(b_initialiser(shape=(128,)), name=stage_name+"_c1_b")
+        current = tf.nn.conv2d(current, stage1_c1_w, strides=[1, 1, 1, 1], padding='SAME')
+        current = tf.nn.relu(tf.nn.bias_add(current, stage1_c1_b))
+
+        stage1_c2_w = tf.Variable(w_initialiser(shape=(7, 7, 128, 128)), name=stage_name+"_c2_w")
+        stage1_c2_b = tf.Variable(b_initialiser(shape=(128,)), name=stage_name+"_c2_b")
+        current = tf.nn.conv2d(current, stage1_c2_w, strides=[1, 1, 1, 1], padding='SAME')
+        current = tf.nn.relu(tf.nn.bias_add(current, stage1_c2_b))
+
+        stage1_c3_w = tf.Variable(w_initialiser(shape=(7, 7, 128, 128)), name=stage_name+"_c3_w")
+        stage1_c3_b = tf.Variable(b_initialiser(shape=(128,)), name=stage_name+"_c3_b")
+        current = tf.nn.conv2d(current, stage1_c3_w, strides=[1, 1, 1, 1], padding='SAME')
+        current = tf.nn.relu(tf.nn.bias_add(current, stage1_c3_b))
+
+        stage1_c4_w = tf.Variable(w_initialiser(shape=(7, 7, 128, 128)), name=stage_name+"_c4_w")
+        stage1_c4_b = tf.Variable(b_initialiser(shape=(128,)), name=stage_name+"_c4_b")
+        current = tf.nn.conv2d(current, stage1_c4_w, strides=[1, 1, 1, 1], padding='SAME')
+        current = tf.nn.relu(tf.nn.bias_add(current, stage1_c4_b))
+
+        stage1_c5_w = tf.Variable(w_initialiser(shape=(7, 7, 128, 128)), name=stage_name+"_c5_w")
+        stage1_c5_b = tf.Variable(b_initialiser(shape=(128,)), name=stage_name+"_c5_b")
+        current = tf.nn.conv2d(current, stage1_c5_w, strides=[1, 1, 1, 1], padding='SAME')
+        current = tf.nn.relu(tf.nn.bias_add(current, stage1_c5_b))
+
+        stage1_c6_w = tf.Variable(w_initialiser(shape=(1, 1, 128, 128)), name=stage_name+"_c6_w")
+        stage1_c6_b = tf.Variable(b_initialiser(shape=(128,)), name=stage_name+"_c6_b")
+        current = tf.nn.conv2d(current, stage1_c6_w, strides=[1, 1, 1, 1], padding='SAME')
+        current = tf.nn.relu(tf.nn.bias_add(current, stage1_c6_b))
+
+        stage1_c7_w = tf.Variable(w_initialiser(shape=(1, 1, 128, 21)), name=stage_name+"_c7_w")
+        stage1_c7_b = tf.Variable(b_initialiser(shape=(21,)), name=stage_name+"_c7_b")
+        current = tf.nn.conv2d(current, stage1_c7_w, strides=[1, 1, 1, 1], padding='SAME')
+        current = tf.nn.bias_add(current, stage1_c7_b)
+
+        return current
     
     def _create_network(self, input_batch, keep_prob):
         """Construct DeepLab-LargeFOV network.
@@ -110,6 +151,7 @@ class DeepLabLFOVModel(object):
         current = input_batch
         
         v_idx = 0 # Index variable.
+        conv4_3 = None
         
         # Last block is the classification layer.
         for b_idx in xrange(len(dilations) - 1):
@@ -123,6 +165,8 @@ class DeepLabLFOVModel(object):
                 current = tf.nn.relu(tf.nn.bias_add(conv, b))
                 v_idx += 1
             # Optional pooling and dropout after each block.
+            if b_idx ==3:
+                conv4_3 = current
             if b_idx < 3:
                 current = tf.nn.max_pool(current, 
                                          ksize=[1, ks, ks, 1],
@@ -145,13 +189,25 @@ class DeepLabLFOVModel(object):
             elif b_idx <= 6:
                 current = tf.nn.dropout(current, keep_prob=keep_prob)
         
-        # Classification layer; no ReLU.
+        # Classification layer; no ReLU. #
         w = self.variables[v_idx * 2]
         b = self.variables[v_idx * 2 + 1]
         conv = tf.nn.conv2d(current, w, strides=[1, 1, 1, 1], padding='SAME')
-        current = tf.nn.bias_add(conv, b)
+        current = stage0_feat = tf.nn.bias_add(conv, b)
 
-        return current
+        #stage 1
+        current = tf.concat([current,conv4_3],axis=-1)
+        current = stage1_feat =  self.stage_network("stage1",current)
+
+        #stage 2
+        current = tf.concat([current, conv4_3], axis=-1)
+        current = stage2_feat = self.stage_network("stage2", current)
+
+        #stage 3
+        current = tf.concat([current, conv4_3], axis=-1)
+        current = stage3_feat = self.stage_network("stage3", current)
+
+        return stage0_feat,stage1_feat,stage2_feat,stage3_feat
     
     def prepare_label(self, input_batch, new_size):
         """Resize masks and perform one-hot encoding.
@@ -179,13 +235,23 @@ class DeepLabLFOVModel(object):
         Returns:
           Argmax over the predictions of the network of the same shape as the input.
         """
-        raw_output = self._create_network(tf.cast(input_batch, tf.float32), keep_prob=tf.constant(1.0))
+        _,_,_,raw_output = self._create_network(tf.cast(input_batch, tf.float32), keep_prob=tf.constant(1.0))
+
         raw_output = tf.image.resize_bilinear(raw_output, tf.shape(input_batch)[1:3,])
         raw_output = tf.argmax(raw_output, dimension=3)
         raw_output = tf.expand_dims(raw_output, dim=3) # Create 4D-tensor.
         return tf.cast(raw_output, tf.uint8)
         
-    
+    def cal_loss(self,raw_output,label_batch):
+        prediction = tf.reshape(raw_output, [-1, n_classes])
+        # Need to resize labels and convert using one-hot encoding.
+        label_batch = self.prepare_label(label_batch, tf.stack(raw_output.get_shape()[1:3]))
+        gt = tf.reshape(label_batch, [-1, n_classes])
+        # Pixel-wise softmax loss.
+        loss = tf.nn.softmax_cross_entropy_with_logits(logits=prediction, labels=gt)
+        reduced_loss = tf.reduce_mean(loss)
+        return reduced_loss
+
     def loss(self, img_batch, label_batch,weight_decay = 0.05):
         """Create the network, run inference on the input batch and compute loss.
         
@@ -195,18 +261,13 @@ class DeepLabLFOVModel(object):
         Returns:
           Pixel-wise softmax loss.
         """
-        raw_output = self._create_network(tf.cast(img_batch, tf.float32), keep_prob=tf.constant(0.5))
-        prediction = tf.reshape(raw_output, [-1, n_classes])
-        
-        # Need to resize labels and convert using one-hot encoding.
-        label_batch = self.prepare_label(label_batch, tf.stack(raw_output.get_shape()[1:3]))
-        gt = tf.reshape(label_batch, [-1, n_classes])
-        
-        # Pixel-wise softmax loss.
-        loss = tf.nn.softmax_cross_entropy_with_logits(logits=prediction, labels=gt)
-        reduced_loss = tf.reduce_mean(loss)
+        raw_output,raw_output1,raw_output2,raw_output3 = self._create_network(tf.cast(img_batch, tf.float32), keep_prob=tf.constant(0.5))
+        loss0 = self.cal_loss(raw_output,label_batch)
+        loss1 = self.cal_loss(raw_output1, label_batch)
+        loss2 = self.cal_loss(raw_output2, label_batch)
+        loss3 = self.cal_loss(raw_output3,label_batch)
 
         reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
-        loss = reduced_loss + weight_decay * sum(reg_losses)
+        loss = loss0+loss1+loss2+loss3 + weight_decay * sum(reg_losses)
 
-        return reduced_loss
+        return loss
