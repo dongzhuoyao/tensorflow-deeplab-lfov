@@ -31,7 +31,7 @@ BATCH_SIZE = 20
 DATA_DIRECTORY = '/home/VOCdevkit'
 DATA_LIST_PATH = './dataset/train.txt'
 INPUT_SIZE = '321,321'
-LEARNING_RATE = 1e-3
+LEARNING_RATE = 1e-4
 MEAN_IMG = tf.Variable(np.array((104.00698793,116.66876762,122.67891434)), trainable=False, dtype=tf.float32)
 NUM_STEPS = 20000000
 RANDOM_SCALE = True
