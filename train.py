@@ -233,7 +233,7 @@ def main():
         os.makedirs(args.save_dir)
    
     # Iterate over training steps.
-    for step in range(args.num_steps):
+    for step in range(1,args.num_steps):
         start_time = time.time()
         #get learning rate
         lr_scale = math.floor(step/4000);
@@ -263,12 +263,12 @@ def main():
             summary_writer.add_summary(summary_str, step)
 
             val_loss_value, images, labels, preds, _ = sess.run([loss, image_batch, label_batch, pred, optim],
-                                                            feed_dict={learning_rate: cur_lr, is_validation: True})
+                                                            feed_dict={learning_rate: cur_lr,is_validation:True})
             print('step {:d} \t validation loss = {:.3f}, ({:.3f} sec/step)'.format(step, val_loss_value, duration))
 
 
         else:
-            loss_value, _ = sess.run([loss, optim],feed_dict={learning_rate:cur_lr})
+            loss_value, _ = sess.run([loss, optim],feed_dict={learning_rate:cur_lr,is_validation:False})
         duration = time.time() - start_time
 
         print('step {:d} \t loss = {:.3f}, ({:.3f} sec/step)'.format(step, loss_value, duration))
