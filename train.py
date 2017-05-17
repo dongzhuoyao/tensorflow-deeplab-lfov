@@ -136,7 +136,7 @@ def main():
             coord)
         train_image_batch, train_label_batch = reader.dequeue(args.batch_size)
 
-    is_validation = tf.placeholder(dtype=bool, shape=())
+    is_validation = tf.placeholder(dtype=tf.bool, shape=[])
     image_batch = tf.cond(is_validation, lambda: val_image_batch, lambda: train_image_batch)
     label_batch = tf.cond(is_validation, lambda: val_label_batch, lambda: train_label_batch)
 
