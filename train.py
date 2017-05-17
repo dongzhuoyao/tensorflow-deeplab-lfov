@@ -38,7 +38,7 @@ RANDOM_SCALE = True
 RESTORE_FROM = './deeplab_lfov.ckpt'
 SAVE_DIR = './images/'
 SAVE_NUM_IMAGES = 2
-SAVE_PRED_EVERY = 10
+SAVE_PRED_EVERY = 100
 SNAPSHOT_DIR = './snapshots/'
 WEIGHTS_PATH   = None
 
