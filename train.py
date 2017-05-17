@@ -73,6 +73,8 @@ def get_arguments():
                         help="Save figure with predictions and ground truth every often.")
     parser.add_argument("--snapshot_dir", type=str, default=SNAPSHOT_DIR,
                         help="Where to save snapshots of the model.")
+    parser.add_argument("--summary_dir", type=str, default="./summary/",
+                        help="Where to save snapshots of the model.")
     parser.add_argument("--weights_path", type=str, default=WEIGHTS_PATH,
                         help="Path to the file with caffemodel weights. "
                              "If not set, all the variables are initialised randomly.")
@@ -109,29 +111,7 @@ def main():
     # Create queue coordinator.
     coord = tf.train.Coordinator()
 
-    print("====global variable shape check====")
-    for v in tf.global_variables():
-        print("{}:  {}".format(v.name, v.get_shape()))
 
-    recoverable = []
-    for choosed in [u'conv1', u'conv2', u'conv3', u'conv4', u'conv5', u'fc6', u'fc7', u'fc8']:
-        for tmp in tf.global_variables():
-            if choosed in tmp.name:
-                recoverable.append(tmp)
-
-    print("====trainable shape check====")
-    for v in recoverable:
-        print("{}:  {}".format(v.name, v.get_shape()))
-
-    stage_var = []
-    for choosed in [u'stage']:
-        for tmp in tf.global_variables():
-            if choosed in tmp.name:
-                stage_var.append(tmp)
-
-    print("====trainable shape check====")
-    for v in stage_var:
-        print("{}:  {}".format(v.name, v.get_shape()))
 
 
     # Load reader.
@@ -144,16 +124,6 @@ def main():
             coord)
         val_image_batch, val_label_batch = reader.dequeue(args.batch_size)
 
-    # Create network.
-    net = DeepLabLFOVModel(args.weights_path)
-    # Define the loss and optimisation parameters.
-    val_loss = net.loss(val_image_batch, val_label_batch, weight_decay=0.05)
-    val_learning_rate = tf.placeholder(tf.float32, shape=[])
-
-
-    val_optim_1 = tf.train.MomentumOptimizer(learning_rate=val_learning_rate * 0.1, momentum=0.9).minimize(val_loss,                                                                                             var_list=recoverable)
-    val_optim_2 = tf.train.MomentumOptimizer(learning_rate=val_learning_rate, momentum=0.9).minimize(val_loss, var_list=stage_var)
-    val_optim = tf.group(val_optim_1, val_optim_2)
 
 
     # Load reader.
@@ -164,13 +134,45 @@ def main():
             input_size,
             RANDOM_SCALE,
             coord)
-        image_batch, label_batch = reader.dequeue(args.batch_size)
+        train_image_batch, train_label_batch = reader.dequeue(args.batch_size)
+
+    is_validation = tf.placeholder(dtype=bool, shape=())
+    image_batch = tf.cond(is_validation, lambda: val_image_batch, lambda: train_image_batch)
+    label_batch = tf.cond(is_validation, lambda: val_label_batch, lambda: train_label_batch)
 
     # Create network.
     net = DeepLabLFOVModel(args.weights_path)
     # Define the loss and optimisation parameters.
     loss = net.loss(image_batch, label_batch, weight_decay=0.05)
     learning_rate = tf.placeholder(tf.float32, shape=[])
+
+    print("====global variable shape check====")
+    for v in tf.global_variables():
+        print("{}:  {}".format(v.name, v.get_shape()))
+
+    recoverable = []
+    for choosed in [u'conv1', u'conv2', u'conv3', u'conv4', u'conv5', u'fc6', u'fc7', u'fc8']:
+        for tmp in tf.global_variables():
+            if choosed in tmp.name:
+                recoverable.append(tmp)
+
+    print("====recoverable shape check====")
+    for v in recoverable:
+        print("{}:  {}".format(v.name, v.get_shape()))
+
+    stage_var = []
+    for choosed in [u'stage']:
+        for tmp in tf.global_variables():
+            if choosed in tmp.name:
+                stage_var.append(tmp)
+
+    print("====stage_var shape check====")
+    for v in stage_var:
+        print("{}:  {}".format(v.name, v.get_shape()))
+
+
+
+
 
     optim_1 = tf.train.MomentumOptimizer(learning_rate=learning_rate*0.1, momentum=0.9).minimize(loss, var_list=recoverable)
     optim_2 = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9).minimize(loss, var_list=stage_var)
@@ -213,7 +215,7 @@ def main():
     init = tf.global_variables_initializer()
     
     sess.run(init)
-    summary_writer = tf.summary.FileWriter(args.summay_dir, sess.graph)
+    summary_writer = tf.summary.FileWriter(args.summary_dir, sess.graph)
 
 
     
@@ -240,7 +242,7 @@ def main():
 
 
         if step % args.save_pred_every == 0:
-            loss_value, images, labels, preds, _ = sess.run([loss, image_batch, label_batch, pred, optim],feed_dict={learning_rate:cur_lr})
+            loss_value, images, labels, preds, _ = sess.run([loss, image_batch, label_batch, pred, optim],feed_dict={learning_rate:cur_lr,is_validation:False})
             fig, axes = plt.subplots(args.save_num_images, 3, figsize = (16, 12))
             for i in xrange(args.save_num_images):
                 axes.flat[i * 3].set_title('data')
@@ -260,11 +262,9 @@ def main():
             summary_str = sess.run(merged_summary_op)
             summary_writer.add_summary(summary_str, step)
 
-            #do validation
-            _val_loss, images, labels, _ = sess.run([val_loss, val_image_batch, val_label_batch, val_optim],
-                                                            feed_dict={learning_rate: cur_lr})
-
-            print('step {:d} \t validation loss = {:.3f}, ({:.3f} sec/step)'.format(step, _val_loss, duration))
+            val_loss_value, images, labels, preds, _ = sess.run([loss, image_batch, label_batch, pred, optim],
+                                                            feed_dict={learning_rate: cur_lr, is_validation: True})
+            print('step {:d} \t validation loss = {:.3f}, ({:.3f} sec/step)'.format(step, val_loss_value, duration))
 
 
         else:
