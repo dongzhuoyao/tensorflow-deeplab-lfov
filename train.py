@@ -31,7 +31,7 @@ BATCH_SIZE = 20
 DATA_DIRECTORY = '/home/VOCdevkit'
 DATA_LIST_PATH = './dataset/train.txt'
 INPUT_SIZE = '321,321'
-LEARNING_RATE = 1e-4
+LEARNING_RATE = 1e-5
 MEAN_IMG = tf.Variable(np.array((104.00698793,116.66876762,122.67891434)), trainable=False, dtype=tf.float32)
 NUM_STEPS = 20000000
 RANDOM_SCALE = True
@@ -160,6 +160,19 @@ def main():
     for v in recoverable:
         print("{}:  {}".format(v.name, v.get_shape()))
 
+    recoverable_w =[]
+    for v in recoverable:
+        if 'w' in v.name:
+            recoverable_w.append(v)
+
+    recoverable_b = []
+    for v in recoverable:
+        if 'b' in v.name:
+            recoverable_b.append(v)
+
+
+
+
     stage_var = []
     for choosed in [u'stage']:
         for tmp in tf.global_variables():
@@ -170,13 +183,29 @@ def main():
     for v in stage_var:
         print("{}:  {}".format(v.name, v.get_shape()))
 
+    stage_w = []
+    for v in stage_var:
+        if 'w' in v.name:
+            stage_w.append(v)
+
+    stage_b = []
+    for v in stage_var:
+        if 'b' in v.name:
+            stage_b.append(v)
 
 
 
 
-    optim_1 = tf.train.MomentumOptimizer(learning_rate=learning_rate*0.1, momentum=0.9).minimize(loss, var_list=recoverable)
-    optim_2 = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9).minimize(loss, var_list=stage_var)
-    optim = tf.group(optim_1,optim_2)
+
+    optim_1_w = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9).minimize(loss, var_list=recoverable_w)
+    optim_1_b = tf.train.MomentumOptimizer(learning_rate=learning_rate*2, momentum=0.9).minimize(loss,
+                                                                                               var_list=recoverable_b)
+    optim_2_w = tf.train.MomentumOptimizer(learning_rate=learning_rate*4, momentum=0.9).minimize(loss,
+                                                                                               var_list=stage_w)
+    optim_2_b = tf.train.MomentumOptimizer(learning_rate=learning_rate*8, momentum=0.9).minimize(loss,
+                                                                                               var_list=stage_b)
+
+    optim = tf.group(optim_1_w,optim_1_b,optim_2_w,optim_2_b)
 
 
     pred = net.preds(image_batch)
@@ -236,7 +265,7 @@ def main():
     for step in range(1,args.num_steps):
         start_time = time.time()
         #get learning rate
-        lr_scale = math.floor(step/4000);
+        lr_scale = math.floor(step/10000);
         cur_lr = args.learning_rate/math.pow(10,lr_scale)
         print ("current learning rate: {}".format(cur_lr))
 

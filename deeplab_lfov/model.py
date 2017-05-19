@@ -98,7 +98,7 @@ class DeepLabLFOVModel(object):
 
     def stage_network(self,stage_name,current):
 
-        w_initialiser = tf.contrib.layers.xavier_initializer_conv2d(dtype=tf.float32)
+        w_initialiser = tf.random_normal_initializer(mean=0,stddev=0.01)
         b_initialiser = tf.constant_initializer(value=0.0, dtype=tf.float32)
         #533 = 512+21
         stage1_c1_w = tf.Variable(w_initialiser(shape=(7, 7, 533, 128)), name=stage_name+"_c1_w")
