@@ -1,0 +1,1 @@
+tensorboard --logdir ./summary --port 6006
