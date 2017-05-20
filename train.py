@@ -31,9 +31,11 @@ BATCH_SIZE = 20
 DATA_DIRECTORY = '/home/VOCdevkit'
 DATA_LIST_PATH = './dataset/train.txt'
 INPUT_SIZE = '321,321'
+
 LEARNING_RATE = 1e-5
-MEAN_IMG = tf.Variable(np.array((104.00698793,116.66876762,122.67891434)), trainable=False, dtype=tf.float32)
 NUM_STEPS = 20000000
+
+MEAN_IMG = tf.Variable(np.array((104.00698793,116.66876762,122.67891434)), trainable=False, dtype=tf.float32)
 RANDOM_SCALE = True
 RESTORE_FROM = './deeplab_lfov.ckpt'
 SAVE_DIR = './images/'
@@ -285,8 +287,8 @@ def main():
     for step in range(1,args.num_steps):
         start_time = time.time()
         #get learning rate
-        lr_scale = math.floor(step/10000);
-        cur_lr = args.learning_rate/math.pow(10,lr_scale)
+        lr_scale = math.floor(step/4000);
+        cur_lr = args.learning_rate*math.pow(0.333,lr_scale)
         print ("current learning rate: {}".format(cur_lr))
 
 

@@ -200,14 +200,16 @@ class DeepLabLFOVModel(object):
         current = stage1_feat =  self.stage_network("stage1",current)
 
         #stage 2
-        current = tf.concat([current, conv4_3], axis=-1)
-        current = stage2_feat = self.stage_network("stage2", current)
+        #current = tf.concat([current, conv4_3], axis=-1)
+        #current = stage2_feat = self.stage_network("stage2", current)
 
         #stage 3
-        current = tf.concat([current, conv4_3], axis=-1)
-        current = stage3_feat = self.stage_network("stage3", current)
+        #current = tf.concat([current, conv4_3], axis=-1)
+        #current = stage3_feat = self.stage_network("stage3", current)
 
-        return stage0_feat,stage1_feat,stage2_feat,stage3_feat
+        #return stage0_feat,stage1_feat,stage2_feat,stage3_feat
+
+        return stage0_feat, stage1_feat
     
     def prepare_label(self, input_batch, new_size):
         """Resize masks and perform one-hot encoding.
@@ -235,7 +237,8 @@ class DeepLabLFOVModel(object):
         Returns:
           Argmax over the predictions of the network of the same shape as the input.
         """
-        _,_,_,raw_output = self._create_network(tf.cast(input_batch, tf.float32), keep_prob=tf.constant(1.0))
+        #_,_,_,raw_output = self._create_network(tf.cast(input_batch, tf.float32), keep_prob=tf.constant(1.0))
+        _, raw_output = self._create_network(tf.cast(input_batch, tf.float32), keep_prob=tf.constant(1.0))
 
         raw_output = tf.image.resize_bilinear(raw_output, tf.shape(input_batch)[1:3,])
         raw_output = tf.argmax(raw_output, dimension=3)
@@ -261,13 +264,17 @@ class DeepLabLFOVModel(object):
         Returns:
           Pixel-wise softmax loss.
         """
-        raw_output,raw_output1,raw_output2,raw_output3 = self._create_network(tf.cast(img_batch, tf.float32), keep_prob=tf.constant(0.5))
+        #raw_output,raw_output1,raw_output2,raw_output3 = self._create_network(tf.cast(img_batch, tf.float32), keep_prob=tf.constant(0.5))
+        raw_output, raw_output1 = self._create_network(tf.cast(img_batch, tf.float32),
+                                                                                 keep_prob=tf.constant(0.5))
+
         loss0 = self.cal_loss(raw_output,label_batch)
         loss1 = self.cal_loss(raw_output1, label_batch)
-        loss2 = self.cal_loss(raw_output2, label_batch)
-        loss3 = self.cal_loss(raw_output3,label_batch)
+        #loss2 = self.cal_loss(raw_output2, label_batch)
+        #loss3 = self.cal_loss(raw_output3,label_batch)
 
 
-        loss = loss0+loss1+loss2+loss3
+        #loss = loss0+loss1+loss2+loss3
+        loss = loss0+loss1
 
         return loss
