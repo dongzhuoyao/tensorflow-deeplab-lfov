@@ -267,7 +267,7 @@ class DeepLabLFOVModel(object):
         loss2 = self.cal_loss(raw_output2, label_batch)
         loss3 = self.cal_loss(raw_output3,label_batch)
 
-        reg_losses = tf.get_collection(tf.GraphKeys.REGULARIZATION_LOSSES)
-        loss = loss0+loss1+loss2+loss3 + weight_decay * sum(reg_losses)
+
+        loss = loss0+loss1+loss2+loss3
 
         return loss

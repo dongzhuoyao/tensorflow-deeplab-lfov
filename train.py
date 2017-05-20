@@ -193,9 +193,29 @@ def main():
         if 'b' in v.name:
             stage_b.append(v)
 
+    print("====stage_w shape check====")
+    for v in stage_w:
+        print("{}:  {}".format(v.name, v.get_shape()))
+
+    print("====stage_b shape check====")
+    for v in stage_b:
+        print("{}:  {}".format(v.name, v.get_shape()))
+
+    print("====recoverable_w shape check====")
+    for v in recoverable_w:
+        print("{}:  {}".format(v.name, v.get_shape()))
+
+    print("====recoverable_b shape check====")
+    for v in recoverable_b:
+        print("{}:  {}".format(v.name, v.get_shape()))
 
 
 
+    regularizers = tf.contrib.layers.l2_regularizer(scale=0.005)
+    re_w_list = recoverable_w
+    re_w_list.extend(stage_w)
+    reg_term =tf.contrib.layers.apply_regularization(regularizers, weights_list=re_w_list)
+    loss += reg_term
 
     optim_1_w = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9).minimize(loss, var_list=recoverable_w)
     optim_1_b = tf.train.MomentumOptimizer(learning_rate=learning_rate*2, momentum=0.9).minimize(loss,
@@ -294,7 +314,6 @@ def main():
             val_loss_value, images, labels, preds, _ = sess.run([loss, image_batch, label_batch, pred, optim],
                                                             feed_dict={learning_rate: cur_lr,is_validation:True})
             print('step {:d} \t validation loss = {:.3f}, ({:.3f} sec/step)'.format(step, val_loss_value, duration))
-
 
         else:
             loss_value, _ = sess.run([loss, optim],feed_dict={learning_rate:cur_lr,is_validation:False})
