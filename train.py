@@ -287,7 +287,7 @@ def main():
     for step in range(1,args.num_steps):
         start_time = time.time()
         #get learning rate
-        lr_scale = math.floor(step/4000);
+        lr_scale = math.floor(step/7000);
         cur_lr = args.learning_rate*math.pow(0.333,lr_scale)
         print ("current learning rate: {}".format(cur_lr))
 
