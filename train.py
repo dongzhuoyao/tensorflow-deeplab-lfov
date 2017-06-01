@@ -32,7 +32,7 @@ DATA_DIRECTORY = '/home/VOCdevkit'
 DATA_LIST_PATH = './dataset/train.txt'
 INPUT_SIZE = '321,321'
 
-LEARNING_RATE = 1e-5
+LEARNING_RATE = 1e-6
 NUM_STEPS = 20000000
 
 MEAN_IMG = tf.Variable(np.array((104.00698793,116.66876762,122.67891434)), trainable=False, dtype=tf.float32)
@@ -145,7 +145,8 @@ def main():
     # Create network.
     net = DeepLabLFOVModel(args.weights_path)
     # Define the loss and optimisation parameters.
-    loss = net.loss(image_batch, label_batch, weight_decay=0.05)
+    loss0,loss1 = net.loss(image_batch, label_batch, weight_decay=0.05)
+    loss = loss0+loss1
     learning_rate = tf.placeholder(tf.float32, shape=[])
 
     print("====global variable shape check====")
@@ -245,6 +246,8 @@ def main():
     # summary
     with tf.name_scope("loss_summary"):
         summary_list.append(tf.summary.scalar("main_loss", loss))
+        summary_list.append(tf.summary.scalar("loss0", loss0))
+        summary_list.append(tf.summary.scalar("loss1", loss1))
 
     with tf.name_scope("image_summary"):
         # origin_summary = tf.summary.image("origin", images_summary)

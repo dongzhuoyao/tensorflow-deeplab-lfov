@@ -111,6 +111,17 @@ class DeepLabLFOVModel(object):
         current = tf.nn.conv2d(current, stage1_c2_w, strides=[1, 1, 1, 1], padding='SAME')
         current = tf.nn.relu(tf.nn.bias_add(current, stage1_c2_b))
 
+        stage1_c3_w = tf.Variable(w_initialiser(shape=(1, 1, 128, 128)), name=stage_name + "_c3_w")
+        stage1_c3_b = tf.Variable(b_initialiser(shape=(128,)), name=stage_name + "_c3_b")
+        current = tf.nn.conv2d(current, stage1_c3_w, strides=[1, 1, 1, 1], padding='SAME')
+        current = tf.nn.relu(tf.nn.bias_add(current, stage1_c3_b))
+
+        stage1_c4_w = tf.Variable(w_initialiser(shape=(1, 1, 128, 21)), name=stage_name + "_c4_w")
+        stage1_c4_b = tf.Variable(b_initialiser(shape=(21,)), name=stage_name + "_c4_b")
+        current = tf.nn.conv2d(current, stage1_c4_w, strides=[1, 1, 1, 1], padding='SAME')
+        current = tf.nn.bias_add(current, stage1_c4_b)
+
+        """
         stage1_c3_w = tf.Variable(w_initialiser(shape=(7, 7, 128, 128)), name=stage_name+"_c3_w")
         stage1_c3_b = tf.Variable(b_initialiser(shape=(128,)), name=stage_name+"_c3_b")
         current = tf.nn.conv2d(current, stage1_c3_w, strides=[1, 1, 1, 1], padding='SAME')
@@ -135,7 +146,7 @@ class DeepLabLFOVModel(object):
         stage1_c7_b = tf.Variable(b_initialiser(shape=(21,)), name=stage_name+"_c7_b")
         current = tf.nn.conv2d(current, stage1_c7_w, strides=[1, 1, 1, 1], padding='SAME')
         current = tf.nn.bias_add(current, stage1_c7_b)
-
+        """
         return current
     
     def _create_network(self, input_batch, keep_prob):
@@ -275,6 +286,6 @@ class DeepLabLFOVModel(object):
 
 
         #loss = loss0+loss1+loss2+loss3
-        loss = loss0+loss1
+        #loss = loss0+loss1
 
-        return loss
+        return loss0,loss1
