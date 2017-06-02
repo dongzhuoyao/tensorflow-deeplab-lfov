@@ -32,7 +32,7 @@ DATA_DIRECTORY = '/home/VOCdevkit'
 DATA_LIST_PATH = './dataset/train.txt'
 INPUT_SIZE = '321,321'
 
-LEARNING_RATE = 1e-6
+LEARNING_RATE = 1e-2
 NUM_STEPS = 20000000
 
 MEAN_IMG = tf.Variable(np.array((104.00698793,116.66876762,122.67891434)), trainable=False, dtype=tf.float32)
@@ -220,8 +220,8 @@ def main():
     reg_term =tf.contrib.layers.apply_regularization(regularizers, weights_list=re_w_list)
     loss += reg_term
 
-    optim_1_w = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9).minimize(loss, var_list=recoverable_w)
-    optim_1_b = tf.train.MomentumOptimizer(learning_rate=learning_rate*2, momentum=0.9).minimize(loss,
+    optim_1_w = tf.train.MomentumOptimizer(learning_rate=0, momentum=0.9).minimize(loss, var_list=recoverable_w)
+    optim_1_b = tf.train.MomentumOptimizer(learning_rate=0*2, momentum=0.9).minimize(loss,
                                                                                                var_list=recoverable_b)
     optim_2_w = tf.train.MomentumOptimizer(learning_rate=learning_rate*4, momentum=0.9).minimize(loss,
                                                                                                var_list=stage_w)
