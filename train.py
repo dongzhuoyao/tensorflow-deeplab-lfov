@@ -159,19 +159,59 @@ def main():
             if choosed in tmp.name:
                 recoverable.append(tmp)
 
+    frozen = []
+    unfrozen = []
+
+    for tmp in tf.global_variables():
+        is_find_frozen = False
+        for search in [u'conv1', u'conv2', u'conv3', u'conv4']:
+            if search in tmp.name:
+                frozen.append(tmp)
+                is_find_frozen = True
+                break
+
+        if not is_find_frozen:
+            unfrozen.append(tmp)
+
+
+
+
+    print("====frozen variable shape check====")
+    for v in frozen:
+        print("{}:  {}".format(v.name, v.get_shape()))
+
+
+    print("====unfrozen variable shape check====")
+    for v in unfrozen:
+        print("{}:  {}".format(v.name, v.get_shape()))
+
     print("====recoverable shape check====")
     for v in recoverable:
         print("{}:  {}".format(v.name, v.get_shape()))
 
+    train_1_w = []
+    train_1_b = []
     recoverable_w =[]
     for v in recoverable:
         if 'w' in v.name:
             recoverable_w.append(v)
 
+    for v in recoverable_w:
+        for tmp in ['conv5','fc6','fc7','fc8']:
+            if tmp in v.name:
+                train_1_w.append(v)
+                break
+
     recoverable_b = []
     for v in recoverable:
         if 'b' in v.name:
             recoverable_b.append(v)
+
+    for v in recoverable_b:
+        for tmp in ['conv5','fc6','fc7','fc8']:
+            if tmp in v.name:
+                train_1_b.append(v)
+                break
 
 
 
@@ -212,17 +252,29 @@ def main():
     for v in recoverable_b:
         print("{}:  {}".format(v.name, v.get_shape()))
 
+    print("====train_1_w shape check====")
+    for v in train_1_w:
+        print("{}:  {}".format(v.name, v.get_shape()))
+
+    print("====train_1_b shape check====")
+    for v in train_1_b:
+        print("{}:  {}".format(v.name, v.get_shape()))
+
+
+
+
 
 
     regularizers = tf.contrib.layers.l2_regularizer(scale=0.005)
-    re_w_list = recoverable_w
+    re_w_list = []
+    re_w_list.extend(train_1_w)
     re_w_list.extend(stage_w)
     reg_term =tf.contrib.layers.apply_regularization(regularizers, weights_list=re_w_list)
     loss += reg_term
 
-    optim_1_w = tf.train.MomentumOptimizer(learning_rate=0, momentum=0.9).minimize(loss, var_list=recoverable_w)
-    optim_1_b = tf.train.MomentumOptimizer(learning_rate=0*2, momentum=0.9).minimize(loss,
-                                                                                               var_list=recoverable_b)
+    optim_1_w = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9).minimize(loss, var_list=train_1_w)
+    optim_1_b = tf.train.MomentumOptimizer(learning_rate=learning_rate*2, momentum=0.9).minimize(loss,
+                                                                                               var_list=train_1_b)
     optim_2_w = tf.train.MomentumOptimizer(learning_rate=learning_rate*4, momentum=0.9).minimize(loss,
                                                                                                var_list=stage_w)
     optim_2_b = tf.train.MomentumOptimizer(learning_rate=learning_rate*8, momentum=0.9).minimize(loss,
@@ -248,6 +300,8 @@ def main():
         summary_list.append(tf.summary.scalar("main_loss", loss))
         summary_list.append(tf.summary.scalar("loss0", loss0))
         summary_list.append(tf.summary.scalar("loss1", loss1))
+        summary_list.append(tf.summary.scalar("regulation", reg_term))
+
 
     with tf.name_scope("image_summary"):
         # origin_summary = tf.summary.image("origin", images_summary)
